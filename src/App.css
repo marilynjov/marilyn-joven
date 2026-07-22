@@ -64,7 +64,8 @@
   transition: opacity 0.8s ease;
 }
 
-.hint--hidden {
+/* Fade the hint out after the first scroll/touch. */
+body.interacted .hint {
   opacity: 0;
 }
 
@@ -76,4 +77,102 @@
   50% {
     opacity: 0.8;
   }
+}
+
+/* ── About view: HTML content layered over the 3D room you fly into ─────────── */
+.about {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1.5rem, 5vw, 5rem);
+  box-sizing: border-box;
+  color: #fff8f2;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  opacity: 0; /* driven by the fly-in amount in JS */
+  will-change: opacity;
+}
+
+.about__inner {
+  max-width: 620px;
+  width: 100%;
+  /* soft scrim so text stays legible over the orange wall */
+  background: rgba(40, 12, 4, 0.28);
+  backdrop-filter: blur(2px);
+  border-radius: 18px;
+  padding: clamp(1.5rem, 4vw, 3rem);
+}
+
+.about__title {
+  margin: 0 0 1.25rem;
+  font-size: clamp(2rem, 5vw, 3.25rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+
+.about__intro {
+  margin: 0 0 1rem;
+  font-size: clamp(1rem, 1.6vw, 1.2rem);
+  line-height: 1.6;
+}
+
+.about__passion {
+  margin: 0 0 1.5rem;
+  font-size: clamp(0.95rem, 1.4vw, 1.05rem);
+  line-height: 1.5;
+  color: rgba(255, 248, 242, 0.82);
+}
+
+.about__meta {
+  list-style: none;
+  margin: 0 0 1.75rem;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.25rem;
+  font-size: 0.95rem;
+  color: rgba(255, 248, 242, 0.72);
+}
+
+.about__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.about__links a {
+  display: inline-block;
+  padding: 0.55rem 1.1rem;
+  border: 1px solid rgba(255, 248, 242, 0.5);
+  border-radius: 999px;
+  color: #fff8f2;
+  text-decoration: none;
+  font-size: 0.95rem;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.about__links a:hover {
+  background: rgba(255, 248, 242, 0.16);
+  border-color: rgba(255, 248, 242, 0.9);
+}
+
+.about__back {
+  position: fixed;
+  top: clamp(1rem, 3vw, 2rem);
+  left: clamp(1rem, 3vw, 2rem);
+  padding: 0.5rem 1rem;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 248, 242, 0.4);
+  border-radius: 999px;
+  color: #fff8f2;
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.about__back:hover {
+  background: rgba(0, 0, 0, 0.45);
 }

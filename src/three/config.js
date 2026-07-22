@@ -71,6 +71,21 @@ export const LOOK_DAMPING = 0.05
 export const LOOK_ACTIVATE_START = 0.85
 export const LOOK_ACTIVATE_END = 1.0
 
+// ── About view (click the orange block → zoom into it until all is orange) ────
+// How far IN FRONT of the orange block the camera comes to rest (world units).
+// Smaller = zoomed in tighter. The screen fills orange either way, thanks to the
+// orange backdrop that fades in behind the block.
+export const ABOUT_CAM_GAP = 1.8
+// Final framing nudge (world units), shifting where the camera comes to rest
+// relative to the block. ABOUT_END_X: negative moves the camera LEFT, so the
+// orange sits further RIGHT on screen (less to the left); positive is the
+// opposite. ABOUT_END_Y: positive moves the camera up. ~0.5–2 is a clear nudge.
+export const ABOUT_END_X = 0.2
+export const ABOUT_END_Y = 0.13
+export const ABOUT_DAMPING = 0.02 // zoom-in / zoom-out easing (lower = slower)
+export const ABOUT_SCROLL_OUT = 0.0016 // wheel sensitivity for scrolling back out
+export const ABOUT_COLOR = '#eb7c4e' // orange fill (sampled from the about block)
+
 // ── Derived positions (don't edit these; edit the knobs above) ───────────────
 
 // z of each layer, index 0 = layer1 (back) … index 4 = layer5 (front).
@@ -89,3 +104,8 @@ export const MENU_BG_Z = MENU_Z - 3
 
 // Where the camera ends up: just in front of the menu so you can read it.
 export const CAMERA_END_Z = MENU_Z + 6
+
+// About zoom depths (built from the knobs above).
+export const ABOUT_CAM_Z = MENU_BG_Z + ABOUT_CAM_GAP // camera rests in front of it
+export const ABOUT_BG_Z = MENU_BG_Z - 0.5 // orange fill, just behind the block
+export const ABOUT_LOOK_Z = MENU_BG_Z - 8 // where the camera aims (straight in)

@@ -1,31 +1,40 @@
 import { useEffect, useRef } from 'react'
-import { SCROLL_SENSITIVITY } from './config'
+import { SCROLL_SENSITIVITY, ABOUT_SCROLL_OUT } from './config'
 
 // ─────────────────────────────────────────────────────────────────────────────
-// The page itself never scrolls. Instead we listen for wheel / trackpad / touch
-// gestures and accumulate a single number: `target`, from 0 (start, looking at
-// the full composite) to 1 (arrived at the menu).
+// The page never scrolls. We turn wheel / trackpad / touch into a single number:
+// `target`, 0 (entry) → 1 (menu). We return a *ref*, not state, so the render
+// loop reads it every frame without re-rendering React.
 //
-// We return a *ref* (a mutable box), NOT React state. Why? This value changes
-// every frame — putting it in state would re-render React 60×/sec. Instead the
-// Three.js render loop reads `progress.current.target` directly each frame.
-// This is a core R3F pattern: keep fast-changing values out of React state.
+// `nav` is the About-view ref ({ target, current, … }). When we're inside the
+// About room, the same gestures instead scroll us BACK OUT (reduce nav.target),
+// leaving the main scroll progress frozen where it was.
 // ─────────────────────────────────────────────────────────────────────────────
-export function useScrollProgress() {
+export function useScrollProgress(nav) {
   const progress = useRef({ target: 0, current: 0 })
 
   useEffect(() => {
     const clamp = (v) => Math.min(1, Math.max(0, v))
 
-    // Mouse wheel / trackpad
-    const onWheel = (e) => {
-      e.preventDefault() // stop any native scroll/back-swipe
-      progress.current.target = clamp(
-        progress.current.target + e.deltaY * SCROLL_SENSITIVITY,
-      )
+    // Are we in (or entering) the About view? Then gestures drive the fly-out.
+    const inAbout = () => nav.current.target > 0 || nav.current.current > 0.02
+
+    const apply = (delta) => {
+      if (inAbout()) {
+        // Scroll up (delta < 0) walks nav.target down toward 0 → fly back out.
+        nav.current.target = clamp(nav.current.target + delta * ABOUT_SCROLL_OUT)
+      } else {
+        progress.current.target = clamp(
+          progress.current.target + delta * SCROLL_SENSITIVITY,
+        )
+      }
     }
 
-    // Touch: remember where a finger last was, convert drag distance to progress.
+    const onWheel = (e) => {
+      e.preventDefault()
+      apply(e.deltaY)
+    }
+
     let lastTouchY = null
     const onTouchStart = (e) => {
       lastTouchY = e.touches[0].clientY
@@ -33,11 +42,8 @@ export function useScrollProgress() {
     const onTouchMove = (e) => {
       if (lastTouchY === null) return
       const y = e.touches[0].clientY
-      const delta = lastTouchY - y // finger up = go deeper
+      apply((lastTouchY - y) * 4)
       lastTouchY = y
-      progress.current.target = clamp(
-        progress.current.target + delta * SCROLL_SENSITIVITY * 4,
-      )
     }
     const onTouchEnd = () => {
       lastTouchY = null
@@ -54,7 +60,7 @@ export function useScrollProgress() {
       window.removeEventListener('touchmove', onTouchMove)
       window.removeEventListener('touchend', onTouchEnd)
     }
-  }, [])
+  }, [nav])
 
   return progress
 }
