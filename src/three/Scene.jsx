@@ -103,8 +103,10 @@ function AboutFill({ nav }) {
     _lookTarget.set(n.cx, n.cy, ABOUT_BG_Z)
     const vp = state.viewport.getCurrentViewport(state.camera, _lookTarget)
     ref.current.scale.set(vp.width * 1.2, vp.height * 1.2, 1)
+    // Tint to the clicked block's own colour so the fill blends seamlessly.
+    if (n.color) ref.current.material.color.set(n.color)
     // Hold off until later in the zoom so you SEE the block magnify first, then
-    // the fill covers any edges/black for a clean all-orange finish.
+    // the fill covers any edges/black for a clean single-colour finish.
     ref.current.material.opacity = smoothstep(0.8, 0.95, n.current)
   })
 

@@ -79,19 +79,20 @@ body.interacted .hint {
   }
 }
 
-/* ── About view: HTML content layered over the 3D room you fly into ─────────── */
-.about {
+/* ── Section overlay: HTML layered over the coloured view you zoom into ─────── */
+.section {
   position: fixed;
   inset: 0;
   display: flex;
-  align-items: center;
+  align-items: safe center; /* scroll instead of clipping when content is tall */
   justify-content: center;
   padding: clamp(1.5rem, 5vw, 5rem);
   box-sizing: border-box;
   color: #fff8f2;
   font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  opacity: 0; /* driven by the fly-in amount in JS */
+  opacity: 0; /* driven by the zoom amount in JS */
   will-change: opacity;
+  overflow: auto; /* let taller content (the homescreen) scroll within */
 }
 
 .about__inner {
@@ -158,21 +159,148 @@ body.interacted .hint {
   border-color: rgba(255, 248, 242, 0.9);
 }
 
-.about__back {
+.section__back {
   position: fixed;
   top: clamp(1rem, 3vw, 2rem);
   left: clamp(1rem, 3vw, 2rem);
+  z-index: 2;
   padding: 0.5rem 1rem;
   background: rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(255, 248, 242, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   border-radius: 999px;
-  color: #fff8f2;
+  color: #fff;
   font: inherit;
   font-size: 0.9rem;
   cursor: pointer;
   transition: background 0.2s ease;
 }
 
-.about__back:hover {
+.section__back:hover {
   background: rgba(0, 0, 0, 0.45);
+}
+
+/* ── Projects: iPad-style homescreen ───────────────────────────────────────── */
+.home {
+  --cell: clamp(60px, 9vw, 92px);
+  --gap: clamp(14px, 2vw, 26px);
+  width: 100%;
+  max-width: calc(var(--cell) * 6 + var(--gap) * 5 + 3rem);
+  margin: auto;
+  padding: clamp(1rem, 3vw, 2rem);
+  box-sizing: border-box;
+  /* the "wallpaper" of the iPad screen, sitting on the coloured zoom */
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.22), rgba(0, 0, 0, 0.12));
+  backdrop-filter: blur(3px);
+  border-radius: 28px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25);
+}
+
+.home__grid {
+  display: grid;
+  grid-template-columns: repeat(6, var(--cell));
+  grid-auto-rows: var(--cell);
+  grid-auto-flow: row dense; /* pack tiles collage-style, no gaps */
+  gap: calc(var(--gap) + 12px) var(--gap); /* extra row gap leaves room for labels */
+  justify-content: center;
+}
+
+.home__tile {
+  text-decoration: none;
+  color: inherit;
+  position: relative;
+  transition: transform 0.15s ease;
+}
+.home__tile:hover {
+  transform: translateY(-3px) scale(1.03);
+}
+
+/* app icon (1×1) */
+.home__tile--app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.home__icon {
+  width: var(--cell);
+  height: var(--cell);
+  border-radius: 24%;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22);
+}
+.home__initial {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  font-size: calc(var(--cell) * 0.42);
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.55);
+  text-transform: uppercase;
+}
+.home__label {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 11px;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+/* image widget (spans w×h cells) */
+.home__widget {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+}
+.home__media {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.home__placeholder {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  font-size: 0.8rem;
+  color: rgba(0, 0, 0, 0.5);
+  text-align: center;
+  padding: 0.5rem;
+  box-sizing: border-box;
+}
+
+/* the dock */
+.home__dock {
+  margin-top: calc(var(--gap) + 14px);
+  display: flex;
+  justify-content: center;
+  gap: var(--gap);
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 26px;
+  backdrop-filter: blur(6px);
+}
+.home__dock .home__tile--app {
+  width: var(--cell);
+}
+.home__dock .home__label {
+  display: none; /* dock icons are label-less, like iPadOS */
+}
+
+/* fewer columns on small screens */
+@media (max-width: 720px) {
+  .home__grid {
+    grid-template-columns: repeat(4, var(--cell));
+  }
+  .home {
+    max-width: calc(var(--cell) * 4 + var(--gap) * 3 + 2rem);
+  }
 }

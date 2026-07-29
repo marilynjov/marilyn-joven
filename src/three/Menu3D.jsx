@@ -35,11 +35,12 @@ const ANIM = 0.12 // easing per frame for the layout transition (0..1)
 // `anchor`/`wordAnchor` = block/text centers, measured from each PNG's alpha.
 // `hit` = block bounding-box size (w, h) as image fractions → the clickable area.
 // `nudge` [x, y] shifts the whole item on WIDE screens only (viewport fractions).
+// `color` = the block's own colour (sampled), used to tint the zoom-in fill.
 const ITEMS = [
-  { key: 'about', label: '/abt.png', word: '/about.png', anchor: [0.484, 0.602], wordAnchor: [0.47, 0.582], hit: [0.24, 0.277], nudge: [0, 0] },
-  { key: 'experience', label: '/exp.png', word: '/experience.png', anchor: [0.201, 0.428], wordAnchor: [0.188, 0.442], hit: [0.273, 0.24], nudge: [0, 0] },
-  { key: 'projects', label: '/proj.png', word: '/projects.png', anchor: [0.819, 0.695], wordAnchor: [0.85, 0.69], hit: [0.238, 0.243], nudge: [0, 0] },
-  { key: 'skills', label: '/skill.png', word: '/skills.png', anchor: [0.706, 0.302], wordAnchor: [0.716, 0.329], hit: [0.251, 0.249], nudge: [0, 0] },
+  { key: 'about', label: '/abt.png', word: '/about.png', anchor: [0.484, 0.602], wordAnchor: [0.47, 0.582], hit: [0.24, 0.277], nudge: [0, 0], color: '#eb7c4e' },
+  { key: 'experience', label: '/exp.png', word: '/experience.png', anchor: [0.201, 0.428], wordAnchor: [0.188, 0.442], hit: [0.273, 0.24], nudge: [0, 0], color: '#5aa9a0' },
+  { key: 'projects', label: '/proj.png', word: '/projects.png', anchor: [0.819, 0.695], wordAnchor: [0.85, 0.69], hit: [0.238, 0.243], nudge: [0, 0], color: '#f8df6a' },
+  { key: 'skills', label: '/skill.png', word: '/skills.png', anchor: [0.706, 0.302], wordAnchor: [0.716, 0.329], hit: [0.251, 0.249], nudge: [0, 0], color: '#c94f4f' },
 ]
 
 const ALL_FILES = ITEMS.flatMap((it) => [it.label, it.word])
@@ -75,7 +76,7 @@ function CoverPlane({
   children,
 }) {
   const ref = useRef()
-  const cur = useRef({ x: 0, y: 0, s: 1, t: 1 }) // animated world state + tint
+  const cur = useRef({ b: 0, s: 1, t: 1 }) // eased: layout blend, scale, tint
 
   useFrame((state) => {
     if (!ref.current) return
@@ -100,31 +101,28 @@ function CoverPlane({
     cur.current.s += (layout.scale - cur.current.s) * ANIM
     const s = cover * cur.current.s
 
-    let offX
-    let offY
-    if (layout.stack) {
-      const ax = (selfAnchor[0] - 0.5) * BG_WIDTH * s
-      const ay = (0.5 - selfAnchor[1]) * PLANE_HEIGHT * s
-      offX = layout.screen[0] * vp.width - ax
-      offY = layout.screen[1] * vp.height - ay
-    } else {
-      let ax = 0
-      let ay = 0
-      if (alignAnchor) {
-        ax = (alignAnchor[0] - selfAnchor[0]) * BG_WIDTH * s
-        ay = (selfAnchor[1] - alignAnchor[1]) * PLANE_HEIGHT * s
-      }
-      offX = nudge[0] * vp.width + ax
-      offY = nudge[1] * vp.height + ay
+    // Desktop position: stay as painted + word→label alignment + manual nudge.
+    // Computed with the CURRENT scale and applied instantly (no easing), so the
+    // word zooms locked to its label instead of lagging/sliding on arrival.
+    let dx = nudge[0] * vp.width
+    let dy = nudge[1] * vp.height
+    if (alignAnchor) {
+      dx += (alignAnchor[0] - selfAnchor[0]) * BG_WIDTH * s
+      dy += (selfAnchor[1] - alignAnchor[1]) * PLANE_HEIGHT * s
     }
 
-    cur.current.x += (offX - cur.current.x) * ANIM
-    cur.current.y += (offY - cur.current.y) * ANIM
+    // Mobile-column position: this plane's own anchor placed at its column slot.
+    const cx = layout.screen[0] * vp.width - (selfAnchor[0] - 0.5) * BG_WIDTH * s
+    const cy = layout.screen[1] * vp.height - (0.5 - selfAnchor[1]) * PLANE_HEIGHT * s
+
+    // Ease ONLY the wide↔mobile blend, so the layout switch animates while the
+    // in-layout position tracks the zoom exactly.
+    cur.current.b += ((layout.stack ? 1 : 0) - cur.current.b) * ANIM
     cur.current.t += (tint - cur.current.t) * ANIM
 
     ref.current.scale.set(s, s, 1)
-    ref.current.position.x = cur.current.x
-    ref.current.position.y = cur.current.y
+    ref.current.position.x = dx + (cx - dx) * cur.current.b
+    ref.current.position.y = dy + (cy - dy) * cur.current.b
     ref.current.material.color.setScalar(cur.current.t)
 
     if (fade) {
@@ -177,7 +175,7 @@ function MenuItem({ item, labelTex, wordTex, layout, progress, nav, onSelect, di
           onClick={(e) => {
             if (!active()) return
             e.stopPropagation()
-            onSelect(item.key, e.object.getWorldPosition(_world))
+            onSelect(item.key, e.object.getWorldPosition(_world), item.color)
           }}
           onPointerOver={(e) => {
             if (!active()) return
@@ -226,9 +224,11 @@ export function Menu3D({ progress, nav, onSelect }) {
   return (
     <group>
       {ITEMS.map((it, i) => {
-        const layout = isSmall
-          ? { stack: true, screen: [0, columnY(i, n)], scale: SMALL_SCALE }
-          : { stack: false, scale: 1 }
+        const layout = {
+          stack: isSmall,
+          screen: [0, columnY(i, n)],
+          scale: isSmall ? SMALL_SCALE : 1,
+        }
         return (
           <MenuItem
             key={it.key}
