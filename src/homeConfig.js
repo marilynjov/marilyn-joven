@@ -26,7 +26,7 @@ export const HOME_ITEMS = [
   { name: 'GitHub', url: 'https://github.com/marilynjov', icon: '/home/github.png' },
   { name: 'Portfolio', url: 'https://example.com', icon: '/home/portfolio.png' },
   { name: 'My Weather', url: 'https://weather-gamma-blue.vercel.app/',icon: '/public/favicon.ico' },
-  { name: 'Case Study', url: 'https://example.com' },
+  { name: 'Master thesis', url: 'https://arc.net/l/quote/zftjdmla' },
   { name: 'Dribbble', url: 'https://dribbble.com' },
   { name: 'Notion', url: 'https://notion.so' },
 ]
