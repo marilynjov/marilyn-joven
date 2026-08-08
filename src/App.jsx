@@ -4,10 +4,16 @@ import { Scene } from './three/Scene'
 import { useScrollProgress } from './three/useScrollProgress'
 import { CAMERA_START_Z, CAMERA_FOV } from './three/config'
 import { HOME_ITEMS, DOCK } from './homeConfig'
+import { EXP_PHOTOS, EXP_ZOOM, EXP_FILL, EXP_DARKEN, DEBUG_HITBOXES } from './experienceConfig'
 import './App.css'
 
 // Sections that have a view when you click their block. Others do nothing (yet).
-const SECTIONS = new Set(['about', 'projects'])
+const SECTIONS = new Set(['about', 'projects', 'experience'])
+
+// Experience: six full-frame stills that together form one short animation.
+// Landing on the section shows Exp-1; hovering plays 1→6 and holds on 6.
+const EXP_FRAMES = ['/Exp-1.png', '/Exp-2.png', '/Exp-3.png', '/Exp-4.png', '/Exp-5.png', '/Exp-6.png']
+const EXP_FRAME_MS = 110 // per-frame duration of the hover animation
 
 const smoothstep = (a, b, x) => {
   const t = Math.min(1, Math.max(0, (x - a) / (b - a)))
@@ -137,6 +143,111 @@ function ProjectsHome() {
   )
 }
 
+// ── Experience: six stills stacked into one plane; hovering plays 1→6 ─────────
+function ExperienceFrames() {
+  const [frame, setFrame] = useState(0) // 0 = Exp-1 (default) … 5 = Exp-6
+  const [selected, setSelected] = useState(null) // clicked photo index, or null
+  const timer = useRef(null)
+
+  // Preload every frame so the animation doesn't stutter on its first play.
+  useEffect(() => {
+    EXP_FRAMES.forEach((src) => {
+      const img = new Image()
+      img.src = src
+    })
+    return () => clearInterval(timer.current)
+  }, [])
+
+  // Advance one frame per tick until Exp-6, then stop and hold there.
+  const play = () => {
+    if (timer.current) return // already running
+    timer.current = setInterval(() => {
+      setFrame((f) => {
+        if (f >= EXP_FRAMES.length - 1) {
+          clearInterval(timer.current)
+          timer.current = null
+          return f
+        }
+        return f + 1
+      })
+    }, EXP_FRAME_MS)
+  }
+
+  // Trigger on real movement, not mouseenter: when the section's pointer-events
+  // flips on at the end of the zoom, the browser fires a synthetic mouseenter
+  // under the stationary cursor — that would skip straight past Exp-1. A genuine
+  // mousemove only happens when the user actually moves over the frames.
+  const atEnd = frame >= EXP_FRAMES.length - 1 // Exp-6 fully assembled
+  const active = selected != null ? EXP_PHOTOS[selected] : null
+
+  // Zoom the strip until the chosen photo fills the screen AND sits dead-center.
+  // 1/w and 1/h are the scales that make the frame exactly fill; the max covers
+  // both axes, EXP_ZOOM is a floor, and *1.08 hides the edges. Scaling alone (via
+  // transform-origin) only pins the photo in place — so we also translate its
+  // center (x, y) to the middle (0.5, 0.5). With origin at 0 0, a point at
+  // fraction p lands at s*p, so translating by (0.5 - s*p) puts it at center.
+  const zoomStyle = (() => {
+    if (!active) return undefined
+    const s = Math.max(EXP_ZOOM, 1 / active.w, 1 / active.h) * EXP_FILL
+    const tx = (0.5 - s * active.x) * 100
+    const ty = (0.5 - s * active.y) * 100
+    return { transform: `translate(${tx}%, ${ty}%) scale(${s})` }
+  })()
+
+  return (
+    <div className="exp" onMouseMove={play}>
+      {/* Aspect-locked stage so the hotspots line up with the photos exactly. */}
+      <div className="exp__stage">
+        <div className="exp__zoom" style={zoomStyle}>
+          {EXP_FRAMES.map((src, i) => (
+            <img
+              key={src}
+              className="exp__frame"
+              src={src}
+              alt=""
+              style={{ opacity: i === frame ? 1 : 0 }}
+            />
+          ))}
+
+          {/* Clickable photo targets — only once the strip has fully assembled. */}
+          {atEnd &&
+            selected == null &&
+            EXP_PHOTOS.map((p, i) => (
+              <button
+                key={i}
+                className={`exp__hit ${DEBUG_HITBOXES ? 'exp__hit--debug' : ''}`}
+                style={{
+                  left: `${p.x * 100}%`,
+                  top: `${p.y * 100}%`,
+                  width: `${p.w * 100}%`,
+                  height: `${p.h * 100}%`,
+                }}
+                onClick={() => setSelected(i)}
+                aria-label={`${p.year} — ${p.role}`}
+              />
+            ))}
+        </div>
+      </div>
+
+      {/* Zoomed into the frame: a soft darken in the corner, then the year is
+          burned in like a disposable-camera date stamp with the role beneath. */}
+      {active && (
+        <div className="exp__detail" onClick={() => setSelected(null)}>
+          <div className="exp__grade" style={{ '--exp-dark': EXP_DARKEN }} />
+          <figure className="exp__stamp" onClick={(e) => e.stopPropagation()}>
+            <span className="exp__date">{active.year}</span>
+            <span className="exp__role">{active.role}</span>
+            {active.note && <span className="exp__note">{active.note}</span>}
+          </figure>
+          <button className="exp__close" onClick={() => setSelected(null)}>
+            ✕
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Section overlay: fades in with the zoom, renders the active section ───────
 function SectionOverlay({ nav, activeKey, onClose }) {
   const ref = useRef()
@@ -163,6 +274,7 @@ function SectionOverlay({ nav, activeKey, onClose }) {
       </button>
       {activeKey === 'about' && <AboutContent />}
       {activeKey === 'projects' && <ProjectsHome />}
+      {activeKey === 'experience' && <ExperienceFrames />}
     </div>
   )
 }

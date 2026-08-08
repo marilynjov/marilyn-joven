@@ -75,7 +75,7 @@ export const LOOK_ACTIVATE_END = 1.0
 // How far IN FRONT of the orange block the camera comes to rest (world units).
 // Smaller = zoomed in tighter. The screen fills orange either way, thanks to the
 // orange backdrop that fades in behind the block.
-export const ABOUT_CAM_GAP = 1.8
+export const ABOUT_CAM_GAP = 2.0
 // Final framing nudge (world units), shifting where the camera comes to rest
 // relative to the block. ABOUT_END_X: negative moves the camera LEFT, so the
 // orange sits further RIGHT on screen (less to the left); positive is the

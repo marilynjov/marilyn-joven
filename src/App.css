@@ -1,3 +1,12 @@
+/* 7-segment display face — the disposable-camera date-stamp look. */
+@font-face {
+  font-family: 'DSEG7';
+  src: url('/fonts/DSEG7Classic-BoldItalic.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* The stage fills the whole viewport and never scrolls. */
 .stage {
   position: fixed;
@@ -177,6 +186,213 @@ body.interacted .hint {
 
 .section__back:hover {
   background: rgba(0, 0, 0, 0.45);
+}
+
+/* ── Experience: full-bleed frame animation (Exp-1 → Exp-6 on hover) ────────── */
+.section--experience {
+  padding: 0; /* let the frames fill the whole viewport */
+}
+
+.exp {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+/* Aspect-locked box that fits the Exp image inside the viewport (letterboxed on
+   black — invisible against the black art). Because it matches the image aspect
+   exactly, percentage-positioned hotspots line up with the photos on any screen. */
+.exp__stage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(100vw, calc(100vh * 2388 / 1668));
+  height: min(100vh, calc(100vw * 1668 / 2388));
+  transform: translate(-50%, -50%);
+}
+
+/* Inner layer that scales toward the clicked photo (kept separate so the stage's
+   centering transform isn't clobbered by the zoom). */
+.exp__zoom {
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 0; /* the centering math in App.jsx assumes a top-left origin */
+  transition: transform 0.6s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* All frames stacked; JS toggles opacity so the current one shows. No transition
+   = a hard cut between frames, which reads as a flip-book animation. */
+.exp__frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Clickable photo target, centered on its (x, y). Transparent until hovered. */
+.exp__hit {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  padding: 0;
+  background: transparent;
+  border: 2px solid transparent;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.exp__hit:hover {
+  border-color: rgba(255, 224, 168, 0.9);
+  box-shadow: 0 0 22px rgba(255, 205, 130, 0.35), inset 0 0 40px rgba(0, 0, 0, 0.35);
+}
+.exp__hit--debug {
+  border-color: rgba(90, 255, 210, 0.9);
+  background: rgba(90, 255, 210, 0.18);
+}
+
+/* ── Chosen photo: zoom into the frame, darken a corner, stamp the date ──────── */
+.exp__detail {
+  position: absolute;
+  inset: 0;
+  cursor: pointer; /* click the photo to go back */
+}
+
+/* A soft darken anchored to the bottom-right corner (where the stamp sits) plus a
+   whisper of overall shade — just enough to lift the orange type off the photo. */
+.exp__grade {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      115% 85% at 100% 100%,
+      rgba(0, 0, 0, var(--exp-dark, 0.62)),
+      rgba(0, 0, 0, 0) 55%
+    ),
+    rgba(0, 0, 0, calc(var(--exp-dark, 0.62) * 0.28));
+  opacity: 0;
+  animation: exp-fade 0.6s ease 0.45s forwards;
+}
+@keyframes exp-fade {
+  to {
+    opacity: 1;
+  }
+}
+
+/* Date stamp, bottom-right, like the imprint burned onto a film photo. */
+.exp__stamp {
+  position: absolute;
+  right: calc(clamp(1.1rem, 5vw, 4rem) + 100px);
+  bottom: clamp(1.5rem, 5vh, 3.2rem);
+  margin: 0;
+  cursor: default;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+  text-align: right;
+  opacity: 0;
+  animation: exp-write 0.6s ease 0.85s forwards;
+}
+@keyframes exp-write {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.exp__date {
+  font-family: 'DSEG7', 'Courier New', monospace;
+  font-size: clamp(2rem, 7vw, 4.5rem);
+  line-height: 1;
+  letter-spacing: 0.04em;
+  color: #ff9a2e;
+  text-shadow: 0 0 8px rgba(255, 145, 40, 0.75), 0 0 24px rgba(255, 115, 20, 0.45);
+}
+.exp__role {
+  font-family: 'Courier New', Courier, monospace;
+  text-transform: uppercase;
+  font-size: clamp(0.85rem, 2vw, 1.4rem);
+  letter-spacing: 0.22em;
+  color: #ffbb6e;
+  text-shadow: 0 0 10px rgba(255, 140, 40, 0.5);
+}
+.exp__note {
+  max-width: 42ch;
+  margin-top: 0.2rem;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: clamp(0.78rem, 1.4vw, 1rem);
+  line-height: 1.5;
+  color: rgba(255, 224, 190, 0.85);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7);
+}
+.exp__close {
+  position: absolute;
+  top: clamp(1rem, 3vw, 2rem);
+  right: clamp(1rem, 3vw, 2rem);
+  width: 2.2rem;
+  height: 2.2rem;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 190, 120, 0.5);
+  border-radius: 999px;
+  color: #ffbb6e;
+  font-size: 0.9rem;
+  cursor: pointer;
+  opacity: 0;
+  animation: exp-fade 0.5s ease 0.85s forwards;
+  transition: background 0.2s ease;
+}
+.exp__close:hover {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.exp__year {
+  font-family: 'Courier New', Courier, monospace;
+  font-weight: 700;
+  font-size: clamp(2.6rem, 9vw, 5.5rem);
+  letter-spacing: 0.12em;
+  color: #e9b949;
+  text-shadow: 0 0 18px rgba(233, 185, 73, 0.35);
+}
+.exp__role {
+  font-family: 'Courier New', Courier, monospace;
+  text-transform: uppercase;
+  font-size: clamp(1rem, 2.6vw, 1.6rem);
+  letter-spacing: 0.24em;
+  color: #fff8f2;
+}
+.exp__note {
+  max-width: 42ch;
+  margin-top: 0.4rem;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: clamp(0.9rem, 1.5vw, 1.05rem);
+  line-height: 1.6;
+  color: rgba(255, 248, 242, 0.82);
+}
+.exp__close {
+  margin-top: 1.2rem;
+  padding: 0.5rem 1.2rem;
+  background: transparent;
+  border: 1px solid rgba(233, 185, 73, 0.6);
+  border-radius: 999px;
+  color: #e9b949;
+  font-family: 'Courier New', Courier, monospace;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.exp__close:hover {
+  background: rgba(233, 185, 73, 0.14);
+  border-color: rgba(233, 185, 73, 0.95);
 }
 
 /* ── Projects: iPad-style homescreen ───────────────────────────────────────── */

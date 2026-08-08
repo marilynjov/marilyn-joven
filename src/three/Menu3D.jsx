@@ -220,6 +220,8 @@ export function Menu3D({ progress, nav, onSelect }) {
   const n = ITEMS.length
 
   const [hoveredKey, setHoveredKey] = useState(null)
+  // Dim the other items while one is hovered.
+  const handleHover = (key) => setHoveredKey(key)
 
   return (
     <group>
@@ -240,7 +242,7 @@ export function Menu3D({ progress, nav, onSelect }) {
             nav={nav}
             onSelect={onSelect}
             dim={hoveredKey !== null && hoveredKey !== it.key}
-            onHover={setHoveredKey}
+            onHover={handleHover}
           />
         )
       })}
