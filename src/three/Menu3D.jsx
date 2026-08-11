@@ -39,7 +39,7 @@ const ANIM = 0.12 // easing per frame for the layout transition (0..1)
 const ITEMS = [
   { key: 'about', label: '/abt.png', word: '/about.png', anchor: [0.484, 0.602], wordAnchor: [0.47, 0.582], hit: [0.24, 0.277], nudge: [0, 0], color: '#eb7c4e' },
   { key: 'experience', label: '/exp.png', word: '/experience.png', anchor: [0.201, 0.428], wordAnchor: [0.188, 0.442], hit: [0.273, 0.24], nudge: [0, 0], color: '#5aa9a0' },
-  { key: 'projects', label: '/proj.png', word: '/projects.png', anchor: [0.819, 0.695], wordAnchor: [0.85, 0.69], hit: [0.238, 0.243], nudge: [0, 0], color: '#f8df6a' },
+  { key: 'projects', label: '/proj.png', word: '/projects.png', anchor: [0.819, 0.695], wordAnchor: [0.843, 0.69], hit: [0.238, 0.243], nudge: [0, 0], color: '#f8df6a' },
   { key: 'skills', label: '/skill.png', word: '/skills.png', anchor: [0.706, 0.302], wordAnchor: [0.716, 0.329], hit: [0.251, 0.249], nudge: [0, 0], color: '#c94f4f' },
 ]
 
@@ -211,7 +211,7 @@ function MenuItem({ item, labelTex, wordTex, layout, progress, nav, onSelect, di
   )
 }
 
-export function Menu3D({ progress, nav, onSelect }) {
+export function Menu3D({ progress, nav, onSelect, onHoverChange }) {
   const textures = useTexture(ALL_FILES)
   textures.forEach((t) => (t.colorSpace = THREE.SRGBColorSpace))
 
@@ -220,8 +220,11 @@ export function Menu3D({ progress, nav, onSelect }) {
   const n = ITEMS.length
 
   const [hoveredKey, setHoveredKey] = useState(null)
-  // Dim the other items while one is hovered.
-  const handleHover = (key) => setHoveredKey(key)
+  // Update local dim state AND notify React-land (App) which item is hovered.
+  const handleHover = (key) => {
+    setHoveredKey(key)
+    if (onHoverChange) onHoverChange(key)
+  }
 
   return (
     <group>

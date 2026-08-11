@@ -435,10 +435,11 @@ body.interacted .hint {
   display: flex;
   flex-direction: column;
   align-items: center;
+  align-self: anchor-center;
 }
 .home__icon {
-  width: var(--cell);
-  height: var(--cell);
+  width: calc(var(--cell) * 0.82);
+  height: calc(var(--cell) * 0.82);
   border-radius: 24%;
   overflow: hidden;
   display: grid;

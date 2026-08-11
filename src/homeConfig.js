@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// THE PROJECTS iPad HOMESCREEN — edit this file to add / remove tiles.
+// THE PROJECTS iPad HOMESCREEN — edit to add / remove tiles.
 //
 // Every tile is one object in HOME_ITEMS (the main grid) or DOCK (bottom bar).
 //
@@ -18,21 +18,19 @@
 
 export const HOME_ITEMS = [
   // — widgets (big image tiles) —
-  { widget: true, name: 'Newspaper', image: '/home/newspaper.png', url: 'https://example.com', w: 2, h: 2 },
+  { widget: true, name: 'Procreate', image: '/public/widget-3.jpg', url: 'https://example.com', w: 2, h: 2 },
   { widget: true, name: 'Indigo', image: '/home/indigo.png', url: 'https://example.com', w: 2, h: 1 },
-  { widget: true, name: 'Space', image: '/home/space.png', url: 'https://example.com', w: 3, h: 2 },
+  { widget: true, name: 'Procreate', image: '/public/widget-1.jpg', url: 'https://example.com', w: 3, h: 2 },
 
   // — apps (small icons) —
   { name: 'GitHub', url: 'https://github.com/marilynjov', icon: '/home/github.png' },
   { name: 'Portfolio', url: 'https://example.com', icon: '/home/portfolio.png' },
-  { name: 'My Weather', url: 'https://weather-gamma-blue.vercel.app/',icon: '/public/favicon.ico' },
-  { name: 'Case Study', url: 'https://example.com' },
-  { name: 'Dribbble', url: 'https://dribbble.com' },
-  { name: 'Notion', url: 'https://notion.so' },
+  { name: 'My Weather', url: 'https://weather-gamma-blue.vercel.app/',icon: '/public/myweather-icon.png' },
+  { name: 'Posture Guard', url: 'https://notion.so',icon: '/public/postureguard-icon.png'},
 ]
 
 export const DOCK = [
-  { name: 'Mail', url: 'mailto:you@example.com', icon: '/home/mail.png' },
-  { name: 'LinkedIn', url: 'https://www.linkedin.com/in/marilyn-stephany-joven', icon: '/home/linkedin.png' },
-  { name: 'Resume', url: '/resume.pdf', icon: '/home/resume.png' },
+  { name: 'Mail', url: 'mailto:marilynsjf@hotmail.com', icon: '/public/mail.png' },
+  { name: 'LinkedIn', url: 'https://www.linkedin.com/in/marilyn-stephany-joven', icon: '/public/linkedin-icon.png' },
+  { name: 'Resume', url: '/resume.pdf', icon: '/public/resume.jpg' },
 ]
