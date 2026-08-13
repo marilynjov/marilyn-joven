@@ -79,14 +79,14 @@ export function AboutRoom({ nav, goWall }) {
 
   useFrame(() => {
     const nv = nav.current.current
-    const reveal = smoothstep(0.8, 0.92, nv) // walls fade in as the block clears
+    const reveal = smoothstep(0.86, 0.95, nv) // walls resolve as the zoom lands
     if (wallsRef.current) {
       wallsRef.current.visible = reveal > 0.01
       wallsRef.current.traverse((o) => {
         if (o.material) o.material.opacity = reveal
       })
     }
-    const want = nv > 0.86 // text appears once the block has cleared the wall
+    const want = nv > 0.92 // text appears once fully zoomed in (matches sections)
     setShowText((s) => (s === want ? s : want))
   })
 

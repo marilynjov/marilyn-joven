@@ -5,10 +5,11 @@ import { useScrollProgress } from './three/useScrollProgress'
 import { CAMERA_START_Z, CAMERA_FOV } from './three/config'
 import { HOME_ITEMS, DOCK } from './homeConfig'
 import { EXP_PHOTOS, EXP_ZOOM, EXP_FILL, EXP_DARKEN, DEBUG_HITBOXES } from './experienceConfig'
+import { SKILLS, SKILL_ROWS, bwSrc, colorSrc } from './skillsConfig'
 import './App.css'
 
 // Sections that have a view when you click their block. Others do nothing (yet).
-const SECTIONS = new Set(['about', 'projects', 'experience'])
+const SECTIONS = new Set(['about', 'projects', 'experience', 'skills'])
 
 // Experience: six full-frame stills that together form one short animation.
 // Landing on the section shows Exp-1; hovering plays 1→6 and holds on 6.
@@ -209,6 +210,265 @@ function ExperienceFrames() {
   )
 }
 
+// Alpha bounding box of an image's actual content (ignoring transparent padding),
+// in the image's own pixel coordinates. Scanned at low res so it's cheap. Fitting
+// BOTH layers by their content — instead of by the file's edges — makes the B&W
+// and colour glyphs line up no matter how each PNG was padded/exported.
+function contentBounds(img) {
+  const nw = img.naturalWidth
+  const nh = img.naturalHeight
+  if (!nw || !nh) return { x: 0, y: 0, w: 0, h: 0 }
+  const scale = Math.min(1, 200 / Math.max(nw, nh))
+  const w = Math.max(1, Math.round(nw * scale))
+  const h = Math.max(1, Math.round(nh * scale))
+  const c = document.createElement('canvas')
+  c.width = w
+  c.height = h
+  const ctx = c.getContext('2d', { willReadFrequently: true })
+  ctx.drawImage(img, 0, 0, w, h)
+  const data = ctx.getImageData(0, 0, w, h).data
+  let minX = w, minY = h, maxX = -1, maxY = -1
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (data[(y * w + x) * 4 + 3] > 8) {
+        if (x < minX) minX = x
+        if (x > maxX) maxX = x
+        if (y < minY) minY = y
+        if (y > maxY) maxY = y
+      }
+    }
+  }
+  if (maxX < 0) return { x: 0, y: 0, w: nw, h: nh } // fully transparent → whole frame
+  const inv = 1 / scale
+  return { x: minX * inv, y: minY * inv, w: (maxX - minX + 1) * inv, h: (maxY - minY + 1) * inv }
+}
+
+// One skill: a colour canvas with the B&W canvas painted on top. Both draw their
+// glyph fitted to the same target box (via contentBounds), so they align. Moving
+// the cursor over it erases the B&W (destination-out) to reveal the colour beneath
+// — like colouring it in. Paint enough and the rest clears so it locks to colour.
+const FILL_FRAC = 0.92 // how much of the icon box the glyph fills (0–1)
+
+function SkillIcon({ skill }) {
+  const bwCanvasRef = useRef() // top layer, painted/erased
+  const colorCanvasRef = useRef() // bottom layer, revealed
+  const iconRef = useRef() // outer wrapper — its centre is stable (never transformed)
+  const floatRef = useRef() // inner element we lean toward the cursor
+  const st = useRef({ bwCtx: null, colorCtx: null, bwImg: null, w: 0, h: 0, ready: false, painted: 0, locked: false, last: null, reset: null })
+
+  // Each icon runs its OWN follower: it leans toward the cursor based on the
+  // vector from ITS centre, with a distance falloff so only the icons near the
+  // pointer react. That makes every icon respond individually instead of the
+  // whole field sliding together.
+  useEffect(() => {
+    const iconEl = iconRef.current
+    const floatEl = floatRef.current
+    if (!iconEl || !floatEl) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    let cx = 0, cy = 0
+    const measure = () => {
+      const r = iconEl.getBoundingClientRect()
+      cx = r.left + r.width / 2
+      cy = r.top + r.height / 2
+    }
+    measure()
+
+    let mx = cx, my = cy, raf = 0
+    const apply = () => {
+      raf = 0
+      const R = Math.min(window.innerWidth, window.innerHeight) * 0.5
+      const dx = mx - cx
+      const dy = my - cy
+      const dist = Math.hypot(dx, dy) || 1
+      const fall = Math.max(0, 1 - dist / R) // 1 at the icon, 0 past the radius
+      const tx = dx * 0.14 * fall
+      const ty = dy * 0.14 * fall
+      const rot = (dx / dist) * skill.amp[2] * fall
+      floatEl.style.transform = `translate(${tx}px, ${ty}px) rotate(${rot}deg)`
+    }
+    const onMove = (e) => {
+      mx = e.clientX
+      my = e.clientY
+      if (!raf) raf = requestAnimationFrame(apply)
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('resize', measure)
+    return () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('resize', measure)
+      if (raf) cancelAnimationFrame(raf)
+    }
+  }, [skill.amp])
+
+  useEffect(() => {
+    const bwCanvas = bwCanvasRef.current
+    const colorCanvas = colorCanvasRef.current
+    if (!bwCanvas || !colorCanvas) return
+    const s = st.current
+    let bwBounds = null
+    let colorBounds = null
+
+    // Draw an image's content region, scaled so its longer side fills FILL_FRAC of
+    // the box, centred. Both layers use this → their glyphs land in the same place.
+    const drawFitted = (ctx, img, b, extra = 1) => {
+      if (!b || b.w <= 0) return
+      const target = Math.min(s.w, s.h) * FILL_FRAC * extra
+      const scale = target / Math.max(b.w, b.h)
+      const dw = b.w * scale
+      const dh = b.h * scale
+      ctx.drawImage(img, b.x, b.y, b.w, b.h, (s.w - dw) / 2, (s.h - dh) / 2, dw, dh)
+    }
+
+    const redrawColor = () => {
+      if (!s.colorCtx || !s.ready) return
+      s.colorCtx.clearRect(0, 0, s.w, s.h)
+      drawFitted(s.colorCtx, s.colorImg, colorBounds)
+    }
+    const reset = () => {
+      if (!s.bwCtx || !s.ready) return
+      s.bwCtx.globalCompositeOperation = 'source-over'
+      s.bwCtx.clearRect(0, 0, s.w, s.h)
+      drawFitted(s.bwCtx, s.bwImg, bwBounds, skill.bwScale || 1)
+      s.painted = 0
+      s.locked = false
+    }
+    s.reset = reset
+
+    const fit = () => {
+      const rect = bwCanvas.getBoundingClientRect()
+      if (!rect.width) return
+      const dpr = Math.min(window.devicePixelRatio || 1, 2)
+      s.w = rect.width
+      s.h = rect.height
+      for (const [canvas, key] of [[bwCanvas, 'bwCtx'], [colorCanvas, 'colorCtx']]) {
+        canvas.width = Math.round(rect.width * dpr)
+        canvas.height = Math.round(rect.height * dpr)
+        const ctx = canvas.getContext('2d')
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+        s[key] = ctx
+      }
+      redrawColor()
+      reset()
+    }
+
+    // Load both, measure each one's content box, then draw. onerror also counts so
+    // a missing file can't hang the pair.
+    const bw = new Image()
+    const color = new Image()
+    let done = 0
+    const onReady = () => {
+      if (++done < 2) return
+      s.bwImg = bw
+      s.colorImg = color
+      bwBounds = contentBounds(bw)
+      colorBounds = contentBounds(color)
+      s.ready = true
+      fit()
+    }
+    bw.onload = onReady
+    bw.onerror = onReady
+    color.onload = onReady
+    color.onerror = onReady
+    bw.src = bwSrc(skill.slug)
+    color.src = colorSrc(skill.slug)
+
+    window.addEventListener('resize', fit)
+    return () => window.removeEventListener('resize', fit)
+  }, [skill.slug, skill.bwScale])
+
+  // Erase a soft brush stamp at the cursor, accumulating swept area toward a lock.
+  const paint = (e) => {
+    const s = st.current
+    const canvas = bwCanvasRef.current
+    if (!s.bwCtx || !s.ready || s.locked || !canvas) return
+    const rect = canvas.getBoundingClientRect()
+    const x = (e.clientX - rect.left) * (s.w / rect.width)
+    const y = (e.clientY - rect.top) * (s.h / rect.height)
+    const r = Math.max(s.w, s.h) * 0.15
+
+    s.bwCtx.globalCompositeOperation = 'destination-out'
+    const g = s.bwCtx.createRadialGradient(x, y, 0, x, y, r)
+    g.addColorStop(0, 'rgba(0,0,0,1)')
+    g.addColorStop(0.55, 'rgba(0,0,0,0.85)')
+    g.addColorStop(1, 'rgba(0,0,0,0)')
+    s.bwCtx.fillStyle = g
+    s.bwCtx.beginPath()
+    s.bwCtx.arc(x, y, r, 0, Math.PI * 2)
+    s.bwCtx.fill()
+
+    if (s.last) s.painted += Math.hypot(x - s.last.x, y - s.last.y) * r * 2
+    s.last = { x, y }
+
+    // Painted enough of the surface → clear the rest so the colour fully shows.
+    if (s.painted > s.w * s.h * 2) {
+      s.bwCtx.globalCompositeOperation = 'source-over'
+      s.bwCtx.clearRect(0, 0, s.w, s.h)
+      s.locked = true
+    }
+  }
+
+  const onEnter = () => { st.current.last = null }
+  // Keep whatever's been coloured in — leaving the icon no longer re-inks it.
+  const onLeave = () => { st.current.last = null }
+
+  return (
+    <div
+      ref={iconRef}
+      className="skills__icon"
+      style={{
+        left: `${skill.x}%`,
+        top: `${skill.y}%`,
+        '--size': skill.size,
+      }}
+    >
+      <span className="skills__float" ref={floatRef}>
+        <span className="skills__art" role="img" aria-label={skill.name}>
+          <canvas ref={colorCanvasRef} className="skills__color" />
+          <canvas
+            ref={bwCanvasRef}
+            className="skills__bw"
+            onPointerEnter={onEnter}
+            onPointerMove={paint}
+            onPointerLeave={onLeave}
+          />
+        </span>
+        <span className="skills__name">{skill.name}</span>
+      </span>
+    </div>
+  )
+}
+
+// ── Skills: tech icons scattered over the red zoom. Each one runs its own cursor
+// follower (see SkillIcon), so they react to the pointer individually. The icons
+// stay hidden through the zoom and pop in together once it lands (is-ready). ────
+function SkillsFloat({ nav }) {
+  const ref = useRef()
+  useEffect(() => {
+    let raf
+    const tick = () => {
+      // Reveal only once the zoom has essentially arrived, so the whole set
+      // appears at once instead of fading in during the fly-in.
+      if (ref.current) ref.current.classList.toggle('is-ready', nav.current.current > 0.92)
+      raf = requestAnimationFrame(tick)
+    }
+    tick()
+    return () => cancelAnimationFrame(raf)
+  }, [nav])
+
+  return (
+    <div className="skills" ref={ref}>
+      {SKILL_ROWS.map((r) => (
+        <p key={r.label} className="skills__rowlabel" style={{ top: `${r.y}%` }}>
+          {r.label}
+        </p>
+      ))}
+      {SKILLS.map((s) => (
+        <SkillIcon key={s.slug} skill={s} />
+      ))}
+    </div>
+  )
+}
+
 // ── Section overlay: fades in with the zoom, renders the active section ───────
 function SectionOverlay({ nav, activeKey, onClose }) {
   const ref = useRef()
@@ -216,9 +476,12 @@ function SectionOverlay({ nav, activeKey, onClose }) {
     let raf
     const tick = () => {
       if (ref.current) {
-        const o = smoothstep(0.6, 0.98, nav.current.current)
-        ref.current.style.opacity = o
-        ref.current.style.pointerEvents = o > 0.5 ? 'auto' : 'none'
+        // Hold hidden through the fly-in, then reveal the whole section at once
+        // once the zoom has essentially landed (matches the skills reveal). The
+        // CSS transition on .section turns the flip into a soft pop.
+        const ready = nav.current.current > 0.92
+        ref.current.style.opacity = ready ? 1 : 0
+        ref.current.style.pointerEvents = ready ? 'auto' : 'none'
       }
       raf = requestAnimationFrame(tick)
     }
@@ -237,6 +500,7 @@ function SectionOverlay({ nav, activeKey, onClose }) {
       </button>
       {activeKey === 'projects' && <ProjectsHome />}
       {activeKey === 'experience' && <ExperienceFrames />}
+      {activeKey === 'skills' && <SkillsFloat nav={nav} />}
     </div>
   )
 }

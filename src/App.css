@@ -102,8 +102,9 @@ body.interacted .hint {
   box-sizing: border-box;
   color: #fff8f2;
   font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  opacity: 0; /* driven by the zoom amount in JS */
+  opacity: 0; /* flipped to 1 by JS once the zoom lands */
   will-change: opacity;
+  transition: opacity 0.35s ease; /* soft pop when it appears */
   overflow: auto; /* let taller content (the homescreen) scroll within */
 }
 
@@ -593,5 +594,152 @@ body.interacted .hint {
   }
   .home {
     max-width: calc(var(--cell) * 4 + var(--gap) * 3 + 2rem);
+  }
+}
+
+/* ── Skills: black-and-white icons floating over the red zoom ────────────────── */
+.section--skills {
+  padding: 0; /* let the icons use the whole viewport */
+}
+
+.skills {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+/* Faint watermark title so the view reads as "skills" without crowding the icons. */
+.skills__heading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  font-size: clamp(3rem, 14vw, 11rem);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.12);
+  text-transform: uppercase;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Faded heading over each row (Languages / Technologies / Tools). Centred on its
+   own y, and revealed together with the icons once the zoom lands. */
+.skills__rowlabel {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  color: rgba(255, 255, 255, 0.32);
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: clamp(0.85rem, 1.7vw, 1.25rem);
+  font-weight: 500;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.skills.is-ready .skills__rowlabel {
+  opacity: 1;
+}
+
+/* Positioned dot — holds the per-icon float variables; centred on its (x, y). */
+.skills__icon {
+  --base: clamp(60px, 10vw, 104px);
+  position: absolute;
+  width: calc(var(--base) * var(--size, 1));
+  height: calc(var(--base) * var(--size, 1));
+  /* Hidden through the zoom; all icons pop in together once .skills is-ready. */
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.9);
+  transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.skills.is-ready .skills__icon {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* The element each icon leans with — kept separate so the parent's centring
+   transform isn't clobbered. JS sets its transform toward the cursor every frame;
+   the transition eases it so the icon trails the pointer instead of snapping. */
+.skills__float {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.35s cubic-bezier(0.22, 0.61, 0.36, 1);
+  will-change: transform;
+}
+
+/* Two stacked layers: the colour PNG, and the B&W canvas painted on top of it.
+   Erasing the canvas reveals the colour beneath. A soft shadow lifts it off red. */
+.skills__art {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.25s ease;
+  filter: drop-shadow(0 3px 8px rgba(60, 12, 6, 0.35));
+}
+.skills__color,
+.skills__bw {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.skills__color {
+  object-fit: contain;
+  pointer-events: none; /* the canvas on top takes the cursor */
+  -webkit-user-drag: none;
+  user-select: none;
+}
+.skills__bw {
+  cursor: crosshair; /* reads as "paint here" */
+  touch-action: none;
+}
+
+/* Name sits just under the chip, hidden until you hover the icon. */
+.skills__name {
+  margin-top: 0.5rem;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: clamp(0.7rem, 1.4vw, 0.9rem);
+  letter-spacing: 0.04em;
+  color: #fff8f2;
+  text-shadow: 0 1px 6px rgba(60, 12, 6, 0.6);
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+/* Hover: pop the icon up and reveal its name. */
+.skills__icon:hover {
+  z-index: 2;
+}
+.skills__icon:hover .skills__art {
+  transform: scale(1.12);
+}
+.skills__icon:hover .skills__name {
+  opacity: 1;
+}
+
+/* Respect users who don't want motion — pin the field, no cursor parallax. */
+@media (prefers-reduced-motion: reduce) {
+  .skills__float {
+    transform: none;
+    transition: none;
+  }
+}
+
+/* Smaller chips on phones so 18 icons don't collide. */
+@media (max-width: 720px) {
+  .skills__icon {
+    --base: clamp(44px, 14vw, 68px);
+  }
+  .skills__name {
+    display: none;
   }
 }
