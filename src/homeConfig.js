@@ -18,19 +18,19 @@
 
 export const HOME_ITEMS = [
   // — widgets (big image tiles) —
-  { widget: true, name: 'Procreate', image: '/public/widget-3.jpg', url: 'https://example.com', w: 2, h: 2 },
+  { widget: true, name: 'Procreate', image: '/widget-3.jpg', url: 'https://example.com', w: 2, h: 2 },
   { widget: true, name: 'Indigo', image: '/home/indigo.png', url: 'https://example.com', w: 2, h: 1 },
-  { widget: true, name: 'Procreate', image: '/public/widget-1.jpg', url: 'https://example.com', w: 3, h: 2 },
+  { widget: true, name: 'Procreate', image: '/widget-1.jpg', url: 'https://example.com', w: 3, h: 2 },
 
   // — apps (small icons) —
-  { name: 'GitHub', url: 'https://github.com/marilynjov', icon: '/home/github.png' },
-  { name: 'Portfolio', url: 'https://example.com', icon: '/home/portfolio.png' },
-  { name: 'My Weather', url: 'https://weather-gamma-blue.vercel.app/',icon: '/public/myweather-icon.png' },
-  { name: 'Posture Guard', url: 'https://notion.so',icon: '/public/postureguard-icon.png'},
+  { name: 'Portfolio', url: 'https://marilyn-joven.vercel.app/', icon: '/portfolio.png' },
+  { name: 'My Weather', url: 'https://weather-gamma-blue.vercel.app/',icon: '/myweather-icon.png' },
+  { name: 'Posture Guard', url: 'https://notion.so',icon: '/postureguard-icon.png'},
+  { name: 'Thesis', url: 'https://arc.net/l/quote/vhzdhzom', icon: '/home/github.png' },
 ]
 
 export const DOCK = [
-  { name: 'Mail', url: 'mailto:marilynsjf@hotmail.com', icon: '/public/mail.png' },
-  { name: 'LinkedIn', url: 'https://www.linkedin.com/in/marilyn-stephany-joven', icon: '/public/linkedin-icon.png' },
-  { name: 'Resume', url: '/resume.pdf', icon: '/public/resume.jpg' },
+  { name: 'Mail', url: 'mailto:marilynsjf@hotmail.com', icon: '/mail.png' },
+  { name: 'LinkedIn', url: 'https://www.linkedin.com/in/marilyn-stephany-joven', icon: '/linkedin-icon.png' },
+  { name: 'Github', url: 'https://github.com/marilynjov', icon: '/github-icon.png'  },
 ]

@@ -73,6 +73,7 @@ function CoverPlane({
   tint = 1,
   progress,
   nav,
+  aboutActive,
   children,
 }) {
   const ref = useRef()
@@ -125,10 +126,16 @@ function CoverPlane({
     ref.current.position.y = dy + (cy - dy) * cur.current.b
     ref.current.material.color.setScalar(cur.current.t)
 
+    // Fade the menu block out BEFORE the room reveals (0.72→0.85), so it stops
+    // covering the back wall; the AboutFill backdrop holds the orange meanwhile.
+    const mf = aboutActive ? 1 - smoothstep(0.72, 0.85, nav.current.current) : 1
     if (fade) {
-      const o = smoothstep(0.72, 1, progress.current.current)
+      const o = smoothstep(0.72, 1, progress.current.current) * mf
       ref.current.material.opacity = o
       ref.current.visible = o > 0.01
+    } else {
+      ref.current.material.opacity = mf
+      ref.current.visible = mf > 0.01
     }
   })
 
@@ -147,7 +154,7 @@ function CoverPlane({
   )
 }
 
-function MenuItem({ item, labelTex, wordTex, layout, progress, nav, onSelect, dim, onHover }) {
+function MenuItem({ item, labelTex, wordTex, layout, progress, nav, onSelect, dim, onHover, aboutActive }) {
   // Clicks/hover only count at the menu (scrolled in) and not mid-About.
   const active = () =>
     progress.current.current > 0.8 && nav.current.current < 0.3
@@ -165,6 +172,7 @@ function MenuItem({ item, labelTex, wordTex, layout, progress, nav, onSelect, di
         fade={false}
         progress={progress}
         nav={nav}
+        aboutActive={aboutActive}
       >
         <mesh
           position={[
@@ -206,12 +214,13 @@ function MenuItem({ item, labelTex, wordTex, layout, progress, nav, onSelect, di
         tint={dim ? 0.7 : 1}
         progress={progress}
         nav={nav}
+        aboutActive={aboutActive}
       />
     </group>
   )
 }
 
-export function Menu3D({ progress, nav, onSelect, onHoverChange }) {
+export function Menu3D({ progress, nav, onSelect, onHoverChange, aboutActive }) {
   const textures = useTexture(ALL_FILES)
   textures.forEach((t) => (t.colorSpace = THREE.SRGBColorSpace))
 
@@ -246,6 +255,7 @@ export function Menu3D({ progress, nav, onSelect, onHoverChange }) {
             onSelect={onSelect}
             dim={hoveredKey !== null && hoveredKey !== it.key}
             onHover={handleHover}
+            aboutActive={aboutActive}
           />
         )
       })}

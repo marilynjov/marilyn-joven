@@ -73,9 +73,12 @@
   transition: opacity 0.8s ease;
 }
 
-/* Fade the hint out after the first scroll/touch. */
+/* Fade the hint out after the first scroll/touch. Must also cancel the pulse
+   animation — a running animation overrides the plain opacity, so it'd keep
+   re-appearing otherwise. */
 body.interacted .hint {
   opacity: 0;
+  animation: none;
 }
 
 @keyframes hint-pulse {
@@ -185,6 +188,77 @@ body.interacted .hint {
 }
 
 .section__back:hover {
+  background: rgba(0, 0, 0, 0.45);
+}
+
+/* ── About room HUD: click-through container; only the buttons take clicks ───── */
+.abouthud {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none; /* let wall clicks fall through to the canvas */
+  opacity: 0;
+  will-change: opacity;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+.abouthud button {
+  pointer-events: auto;
+}
+.abouthud:not([data-ready='1']) button {
+  pointer-events: none; /* disabled until the fly-in has settled */
+}
+
+.abouthud__arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: clamp(2.6rem, 5vw, 3.6rem);
+  height: clamp(2.6rem, 5vw, 3.6rem);
+  display: grid;
+  place-items: center;
+  padding: 0 0 0.2em;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 246, 240, 0.55);
+  border-radius: 999px;
+  color: #fff7f0;
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+.abouthud__arrow:hover {
+  background: rgba(0, 0, 0, 0.42);
+}
+.abouthud__arrow--left {
+  left: clamp(1rem, 3vw, 2.5rem);
+}
+.abouthud__arrow--left:hover {
+  transform: translateY(-50%) translateX(-2px);
+}
+.abouthud__arrow--right {
+  right: clamp(1rem, 3vw, 2.5rem);
+}
+.abouthud__arrow--right:hover {
+  transform: translateY(-50%) translateX(2px);
+}
+
+.abouthud__center {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(1.4rem, 5vh, 3rem);
+  transform: translateX(-50%);
+  padding: 0.5rem 1.2rem;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 246, 240, 0.5);
+  border-radius: 999px;
+  color: #fff7f0;
+  font: inherit;
+  font-size: 0.9rem;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.abouthud__center:hover {
   background: rgba(0, 0, 0, 0.45);
 }
 

@@ -45,45 +45,6 @@ function TitleOverlay({ progress }) {
   )
 }
 
-// ── About content ────────────────────────────────────────────────────────────
-function AboutContent() {
-  return (
-    <div className="about__inner">
-      <h2 className="about__title">About</h2>
-
-      <p className="about__intro">
-        I’m a creative engineer who builds at the seam between design and code. I
-        like turning abstract data and ideas into things people can see, touch,
-        and move through. Lately I’ve been exploring immersive web experiences and
-        the craft of making interfaces feel alive.
-      </p>
-
-      <p className="about__passion">
-        Passionate about creative technology, data visualization, interactive
-        systems, and software.
-      </p>
-
-      <ul className="about__meta">
-        <li>Master’s student</li>
-        <li>Bogotá, Colombia</li>
-      </ul>
-
-      <nav className="about__links">
-        <a href="mailto:m.joven@uniandes.edu.co">Email</a>
-        <a href="https://www.linkedin.com/in/marilyn-stephany-joven" target="_blank" rel="noreferrer">
-          LinkedIn
-        </a>
-        <a href="https://github.com/marilynjov" target="_blank" rel="noreferrer">
-          GitHub
-        </a>
-        <a href="/resume.pdf" download>
-          Resume ↓
-        </a>
-      </nav>
-    </div>
-  )
-}
-
 // ── Projects: an iPad-style homescreen, driven entirely by homeConfig.js ──────
 const PLACEHOLDER_COLORS = ['#f4a3c0', '#8fd0c4', '#f7d774', '#a7b6f0', '#f0a780', '#b6e08a']
 const colorFor = (name = '') => {
@@ -265,16 +226,71 @@ function SectionOverlay({ nav, activeKey, onClose }) {
     return () => cancelAnimationFrame(raf)
   }, [nav])
 
-  if (!activeKey) return null
+  // About is a 3D room (its own HUD), so this DOM overlay skips it — otherwise the
+  // full-screen panel would swallow the canvas clicks the walls need.
+  if (!activeKey || activeKey === 'about') return null
 
   return (
     <div className={`section section--${activeKey}`} ref={ref}>
       <button className="section__back" onClick={onClose}>
         ← Back
       </button>
-      {activeKey === 'about' && <AboutContent />}
       {activeKey === 'projects' && <ProjectsHome />}
       {activeKey === 'experience' && <ExperienceFrames />}
+    </div>
+  )
+}
+
+// ── About room HUD: turn arrows + back, over the 3D room. The container is
+// click-through (so the walls stay clickable); only the buttons capture clicks. ──
+const ABOUT_ORDER = ['left', 'back', 'right']
+
+function AboutHud({ nav, activeWall, goWall, onClose }) {
+  const ref = useRef()
+  useEffect(() => {
+    let raf
+    const tick = () => {
+      if (ref.current) {
+        const o = smoothstep(0.6, 0.98, nav.current.current)
+        ref.current.style.opacity = o
+        ref.current.dataset.ready = o > 0.5 ? '1' : '0' // gates button clicks
+      }
+      raf = requestAnimationFrame(tick)
+    }
+    tick()
+    return () => cancelAnimationFrame(raf)
+  }, [nav])
+
+  const idx = ABOUT_ORDER.indexOf(activeWall)
+
+  return (
+    <div className="abouthud" ref={ref}>
+      <button className="section__back" onClick={onClose}>
+        ← Back
+      </button>
+      {idx > 0 && (
+        <button
+          className="abouthud__arrow abouthud__arrow--left"
+          onClick={() => goWall(ABOUT_ORDER[idx - 1])}
+          aria-label="Turn left"
+        >
+          ‹
+        </button>
+      )}
+      {idx < ABOUT_ORDER.length - 1 && (
+        <button
+          className="abouthud__arrow abouthud__arrow--right"
+          onClick={() => goWall(ABOUT_ORDER[idx + 1])}
+          aria-label="Turn right"
+        >
+          ›
+        </button>
+      )}
+      {activeWall !== 'back' && (
+        <button className="abouthud__center" onClick={() => goWall('back')}>
+          ⌂ Center
+        </button>
+      )}
     </div>
   )
 }
@@ -282,9 +298,15 @@ function SectionOverlay({ nav, activeKey, onClose }) {
 function App() {
   // Shared section-view state (mutated imperatively, read every frame). `cx/cy`
   // are the clicked block's world position; `color` tints the zoom-in fill.
-  const nav = useRef({ target: 0, current: 0, cx: 0, cy: 0, color: null })
+  const nav = useRef({ target: 0, current: 0, cx: 0, cy: 0, color: null, wall: 'back' })
   const progress = useScrollProgress(nav)
   const [activeKey, setActiveKey] = useState(null)
+  // Which About-room wall we're facing (also mirrored into nav for the camera rig).
+  const [activeWall, setActiveWall] = useState('back')
+  const goWall = (wall) => {
+    nav.current.wall = wall
+    setActiveWall(wall)
+  }
 
   const onSelect = (key, world, color) => {
     if (!SECTIONS.has(key)) return
@@ -292,10 +314,14 @@ function App() {
     nav.current.cy = world.y
     nav.current.color = color
     nav.current.target = 1
+    nav.current.wall = 'back'
+    setActiveWall('back')
     setActiveKey(key)
   }
   const closeSection = () => {
     nav.current.target = 0
+    nav.current.wall = 'back'
+    setActiveWall('back')
   }
 
   // Once the fly-out finishes, drop the overlay from the tree.
@@ -329,11 +355,20 @@ function App() {
         gl={{ antialias: true }}
       >
         <color attach="background" args={['#000000']} />
-        <Scene progress={progress} nav={nav} onSelect={onSelect} />
+        <Scene
+          progress={progress}
+          nav={nav}
+          onSelect={onSelect}
+          activeKey={activeKey}
+          goWall={goWall}
+        />
       </Canvas>
 
       <TitleOverlay progress={progress} />
       <SectionOverlay nav={nav} activeKey={activeKey} onClose={closeSection} />
+      {activeKey === 'about' && (
+        <AboutHud nav={nav} activeWall={activeWall} goWall={goWall} onClose={closeSection} />
+      )}
 
       <div className="hint">scroll to enter</div>
     </div>
