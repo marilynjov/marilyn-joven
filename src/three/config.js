@@ -11,10 +11,10 @@
 // layer5 is NOT here — it's the always-on background (MENU_BG_FILE below), so it
 // would show twice if it were also in the curtain. These are the moving layers.
 export const LAYER_FILES = [
-  '/home/layer4.PNG',
-  '/home/layer3.PNG',
-  '/home/layer2.PNG',
-  '/home/layer1.PNG',
+  '/home/layer4.webp',
+  '/home/layer3.webp',
+  '/home/layer2.webp',
+  '/home/layer1.webp',
 ]
 
 // NOTE: layer5 is no longer used — the menu background is now built from the four

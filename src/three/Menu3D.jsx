@@ -41,10 +41,10 @@ const ANIM = 0.12 // easing per frame for the layout transition (0..1)
 // `color` = the block's own colour (sampled), used to tint the zoom-in fill.
 const ITEMS = [
   // `label` (the coloured block) is shared; `word` (the title) has an es variant.
-  { key: 'about', label: '/home/abt.png', word: { en: '/home/about.png', es: '/home/about_esp.PNG' }, anchor: [0.484, 0.602], wordAnchor: { en: [0.47, 0.582], es: [0.47, 0.575] }, hit: [0.24, 0.277], nudge: [0, 0], color: '#eb7c4e' },
-  { key: 'experience', label: '/home/exp.png', word: { en: '/home/experience.png', es: '/home/experience_esp.PNG' }, anchor: [0.201, 0.428], wordAnchor: { en: [0.188, 0.442], es: [0.188, 0.442] }, hit: [0.273, 0.24], nudge: [0, 0], color: '#5aa9a0' },
-  { key: 'projects', label: '/home/proj.png', word: { en: '/home/projects.png', es: '/home/proyects_esp.PNG' }, anchor: [0.819, 0.695], wordAnchor: { en: [0.843, 0.683], es: [0.843, 0.68] }, hit: [0.238, 0.243], nudge: [0, 0], color: '#f8df6a' },
-  { key: 'skills', label: '/home/skill.png', word: { en: '/home/skills.png', es: '/home/skill_esp.PNG' }, anchor: [0.706, 0.302], wordAnchor: { en: [0.716, 0.329], es: [0.705, 0.329] }, hit: [0.251, 0.249], nudge: [0, 0], color: '#c94f4f' },
+  { key: 'about', label: '/home/abt.webp', word: { en: '/home/about.webp', es: '/home/about_esp.webp' }, anchor: [0.484, 0.602], wordAnchor: { en: [0.47, 0.582], es: [0.47, 0.575] }, hit: [0.24, 0.277], nudge: [0, 0], color: '#eb7c4e' },
+  { key: 'experience', label: '/home/exp.webp', word: { en: '/home/experience.webp', es: '/home/experience_esp.webp' }, anchor: [0.201, 0.428], wordAnchor: { en: [0.188, 0.442], es: [0.188, 0.442] }, hit: [0.273, 0.24], nudge: [0, 0], color: '#5aa9a0' },
+  { key: 'projects', label: '/home/proj.webp', word: { en: '/home/projects.webp', es: '/home/proyects_esp.webp' }, anchor: [0.819, 0.695], wordAnchor: { en: [0.843, 0.683], es: [0.843, 0.68] }, hit: [0.238, 0.243], nudge: [0, 0], color: '#f8df6a' },
+  { key: 'skills', label: '/home/skill.webp', word: { en: '/home/skills.webp', es: '/home/skill_esp.webp' }, anchor: [0.706, 0.302], wordAnchor: { en: [0.716, 0.329], es: [0.705, 0.329] }, hit: [0.251, 0.249], nudge: [0, 0], color: '#c94f4f' },
 ]
 
 // Every image the menu can show — both language variants of each title, so the
