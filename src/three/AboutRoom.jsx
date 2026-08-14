@@ -79,14 +79,19 @@ export function AboutRoom({ nav, goWall }) {
 
   useFrame(() => {
     const nv = nav.current.current
-    const reveal = smoothstep(0.86, 0.95, nv) // walls resolve as the zoom lands
+    // Room resolves only at the very end. Walls are readied just before the block
+    // fades (Menu3D's block fade is 0.9→0.98), so when the block clears the room is
+    // already there to take over — no flat-orange stage, no black gap.
+    const reveal = smoothstep(0.86, 0.94, nv)
     if (wallsRef.current) {
       wallsRef.current.visible = reveal > 0.01
       wallsRef.current.traverse((o) => {
         if (o.material) o.material.opacity = reveal
       })
     }
-    const want = nv > 0.92 // text appears once fully zoomed in (matches sections)
+    // Text shows once fully zoomed in, and only while zooming IN — clicking Back
+    // (target → 0) hides it at once, before the room zooms out.
+    const want = nav.current.target === 1 && nv > 0.92
     setShowText((s) => (s === want ? s : want))
   })
 

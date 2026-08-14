@@ -135,11 +135,9 @@ function AboutFill({ nav, about }) {
     // Tint to the clicked block's own colour so the fill blends seamlessly.
     if (n.color) ref.current.material.color.set(n.color)
     // Projects/experience: hold off so you SEE the block magnify first, then the
-    // fill covers the edges. About: come in earlier so it's a solid orange
-    // backdrop by the time the block fades and the room takes over.
-    ref.current.material.opacity = about
-      ? smoothstep(0.65, 0.72, n.current)
-      : smoothstep(0.8, 0.95, n.current)
+    // fill covers the edges. About: no fill at all — the room walls fade in to take
+    // over directly, so there's no flat-orange stage that later gets covered.
+    ref.current.material.opacity = about ? 0 : smoothstep(0.8, 0.95, n.current)
   })
 
   return (

@@ -446,9 +446,12 @@ function SkillsFloat({ nav }) {
   useEffect(() => {
     let raf
     const tick = () => {
-      // Reveal only once the zoom has essentially arrived, so the whole set
-      // appears at once instead of fading in during the fly-in.
-      if (ref.current) ref.current.classList.toggle('is-ready', nav.current.current > 0.92)
+      // Reveal only once zoomed in AND still zooming in (target === 1), so the set
+      // appears at once — and hides instantly on Back, before the zoom-out.
+      if (ref.current) {
+        const ready = nav.current.target === 1 && nav.current.current > 0.92
+        ref.current.classList.toggle('is-ready', ready)
+      }
       raf = requestAnimationFrame(tick)
     }
     tick()
@@ -476,18 +479,22 @@ function SectionOverlay({ nav, activeKey, onClose }) {
     let raf
     const tick = () => {
       if (ref.current) {
-        // Hold hidden through the fly-in, then reveal the whole section at once
-        // once the zoom has essentially landed (matches the skills reveal). The
-        // CSS transition on .section turns the flip into a soft pop.
-        const ready = nav.current.current > 0.92
+        // Reveal only when the zoom has essentially landed AND we're still zooming
+        // IN (target === 1). Gating on the target means clicking Back (target → 0)
+        // hides the content instantly, so it's gone BEFORE the slow zoom-out plays.
+        const ready = nav.current.target === 1 && nav.current.current > 0.92
         ref.current.style.opacity = ready ? 1 : 0
+        // A little rise on the way in makes the arrival read clearly (skipped for
+        // the full-bleed experience frames, which shouldn't slide).
+        const pop = activeKey === 'projects'
+        ref.current.style.transform = ready ? 'translateY(0)' : pop ? 'translateY(20px)' : 'none'
         ref.current.style.pointerEvents = ready ? 'auto' : 'none'
       }
       raf = requestAnimationFrame(tick)
     }
     tick()
     return () => cancelAnimationFrame(raf)
-  }, [nav])
+  }, [nav, activeKey])
 
   // About is a 3D room (its own HUD), so this DOM overlay skips it — otherwise the
   // full-screen panel would swallow the canvas clicks the walls need.

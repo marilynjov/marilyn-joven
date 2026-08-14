@@ -126,9 +126,10 @@ function CoverPlane({
     ref.current.position.y = dy + (cy - dy) * cur.current.b
     ref.current.material.color.setScalar(cur.current.t)
 
-    // Fade the menu block out BEFORE the room reveals (0.72→0.85), so it stops
-    // covering the back wall; the AboutFill backdrop holds the orange meanwhile.
-    const mf = aboutActive ? 1 - smoothstep(0.72, 0.85, nav.current.current) : 1
+    // Hold the magnified block until the very end, then fade it (0.9→0.98) to hand
+    // off to the room. The block covers the screen with orange the whole way in, so
+    // the room only appears once fully zoomed and there's no flat-orange fill.
+    const mf = aboutActive ? 1 - smoothstep(0.9, 0.98, nav.current.current) : 1
     if (fade) {
       const o = smoothstep(0.72, 1, progress.current.current) * mf
       ref.current.material.opacity = o

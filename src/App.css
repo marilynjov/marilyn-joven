@@ -103,8 +103,8 @@ body.interacted .hint {
   color: #fff8f2;
   font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
   opacity: 0; /* flipped to 1 by JS once the zoom lands */
-  will-change: opacity;
-  transition: opacity 0.35s ease; /* soft pop when it appears */
+  will-change: opacity, transform;
+  transition: opacity 0.35s ease, transform 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
   overflow: auto; /* let taller content (the homescreen) scroll within */
 }
 
