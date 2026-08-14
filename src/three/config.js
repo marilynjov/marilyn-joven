@@ -11,10 +11,10 @@
 // layer5 is NOT here — it's the always-on background (MENU_BG_FILE below), so it
 // would show twice if it were also in the curtain. These are the moving layers.
 export const LAYER_FILES = [
-  '/layer4.PNG',
-  '/layer3.PNG',
-  '/layer2.PNG',
-  '/layer1.PNG',
+  '/home/layer4.PNG',
+  '/home/layer3.PNG',
+  '/home/layer2.PNG',
+  '/home/layer1.PNG',
 ]
 
 // NOTE: layer5 is no longer used — the menu background is now built from the four
@@ -75,7 +75,7 @@ export const LOOK_ACTIVATE_END = 1.0
 // How far IN FRONT of the orange block the camera comes to rest (world units).
 // Smaller = zoomed in tighter. The screen fills orange either way, thanks to the
 // orange backdrop that fades in behind the block.
-export const ABOUT_CAM_GAP = 1.8
+export const ABOUT_CAM_GAP = 2.0
 // Final framing nudge (world units), shifting where the camera comes to rest
 // relative to the block. ABOUT_END_X: negative moves the camera LEFT, so the
 // orange sits further RIGHT on screen (less to the left); positive is the
@@ -84,7 +84,7 @@ export const ABOUT_END_X = 0.2
 export const ABOUT_END_Y = 0.13
 export const ABOUT_DAMPING = 0.02 // zoom-in / zoom-out easing (lower = slower)
 export const ABOUT_SCROLL_OUT = 0.0016 // wheel sensitivity for scrolling back out
-export const ABOUT_COLOR = '#eb7c4e' // orange fill (sampled from the about block)
+export const ABOUT_COLOR = '#eb7d4f' // orange fill (sampled from the about block)
 
 // ── Derived positions (don't edit these; edit the knobs above) ───────────────
 
@@ -107,5 +107,17 @@ export const CAMERA_END_Z = MENU_Z + 6
 
 // About zoom depths (built from the knobs above).
 export const ABOUT_CAM_Z = MENU_BG_Z + ABOUT_CAM_GAP // camera rests in front of it
-export const ABOUT_BG_Z = MENU_BG_Z - 0.5 // orange fill, just behind the block
+export const ABOUT_BG_Z = MENU_BG_Z - 5 // orange fill, sits behind the room back wall
 export const ABOUT_LOOK_Z = MENU_BG_Z - 8 // where the camera aims (straight in)
+
+// ── About room (the navigable orange box) ────────────────────────────────────
+// The room is a box centred on the clicked About block. Back wall sits where the
+// fly-in already aims, so the "back" view matches the old flat-orange landing;
+// the side walls flank the camera and give the one-point-perspective look.
+export const ROOM_HALF_W = 2.8 // half the room width — side walls at centre ± this
+export const ROOM_HALF_H = 1.7 // half the room height — floor/ceiling at centre ± this
+export const ROOM_BACK_Z = MENU_BG_Z - 4 // back wall sits a bit behind the block
+export const ROOM_NEAR_Z = ABOUT_CAM_Z + 0.5 // side walls start just behind the camera
+export const ROOM_MID_Z = (ROOM_NEAR_Z + ROOM_BACK_Z) / 2 // depth-centre of the room
+export const WALL_VIEW_DIST = 4 // how far in front of a side wall the camera rests
+export const WALL_DAMPING = 0.08 // easing when turning between walls (lower = slower)

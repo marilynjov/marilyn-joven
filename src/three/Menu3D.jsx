@@ -10,6 +10,7 @@ import {
   CAMERA_FOV,
   CAMERA_END_Z,
 } from './config'
+import { pick } from '../i18n'
 
 const BG_WIDTH = PLANE_HEIGHT * IMAGE_ASPECT
 const _target = new THREE.Vector3() // reused each frame (set to each plane's z)
@@ -33,17 +34,22 @@ const SMALL_SCALE = 0.55 // shrink each item on mobile so the rows don't overlap
 const ANIM = 0.12 // easing per frame for the layout transition (0..1)
 
 // `anchor`/`wordAnchor` = block/text centers, measured from each PNG's alpha.
+// `wordAnchor` is { en, es } — the Spanish title PNG can sit at a different spot,
+// so tweak the `es` [x, y] (image fractions, 0–1) to move ONLY the _esp title.
 // `hit` = block bounding-box size (w, h) as image fractions → the clickable area.
 // `nudge` [x, y] shifts the whole item on WIDE screens only (viewport fractions).
 // `color` = the block's own colour (sampled), used to tint the zoom-in fill.
 const ITEMS = [
-  { key: 'about', label: '/abt.png', word: '/about.png', anchor: [0.484, 0.602], wordAnchor: [0.468, 0.58], hit: [0.24, 0.277], nudge: [0, 0], color: '#eb7c4e' },
-  { key: 'experience', label: '/exp.png', word: '/experience.png', anchor: [0.201, 0.428], wordAnchor: [0.188, 0.442], hit: [0.273, 0.24], nudge: [0, 0], color: '#5aa9a0' },
-  { key: 'projects', label: '/proj.png', word: '/projects.png', anchor: [0.819, 0.695], wordAnchor: [0.84, 0.675], hit: [0.238, 0.243], nudge: [0, 0], color: '#f8df6a' },
-  { key: 'skills', label: '/skill.png', word: '/skills.png', anchor: [0.706, 0.302], wordAnchor: [0.716, 0.329], hit: [0.251, 0.249], nudge: [0, 0], color: '#c94f4f' },
+  // `label` (the coloured block) is shared; `word` (the title) has an es variant.
+  { key: 'about', label: '/home/abt.png', word: { en: '/home/about.png', es: '/home/about_esp.PNG' }, anchor: [0.484, 0.602], wordAnchor: { en: [0.47, 0.582], es: [0.47, 0.575] }, hit: [0.24, 0.277], nudge: [0, 0], color: '#eb7c4e' },
+  { key: 'experience', label: '/home/exp.png', word: { en: '/home/experience.png', es: '/home/experience_esp.PNG' }, anchor: [0.201, 0.428], wordAnchor: { en: [0.188, 0.442], es: [0.188, 0.442] }, hit: [0.273, 0.24], nudge: [0, 0], color: '#5aa9a0' },
+  { key: 'projects', label: '/home/proj.png', word: { en: '/home/projects.png', es: '/home/proyects_esp.PNG' }, anchor: [0.819, 0.695], wordAnchor: { en: [0.843, 0.683], es: [0.843, 0.68] }, hit: [0.238, 0.243], nudge: [0, 0], color: '#f8df6a' },
+  { key: 'skills', label: '/home/skill.png', word: { en: '/home/skills.png', es: '/home/skill_esp.PNG' }, anchor: [0.706, 0.302], wordAnchor: { en: [0.716, 0.329], es: [0.705, 0.329] }, hit: [0.251, 0.249], nudge: [0, 0], color: '#c94f4f' },
 ]
 
-const ALL_FILES = ITEMS.flatMap((it) => [it.label, it.word])
+// Every image the menu can show — both language variants of each title, so the
+// switch is instant (all preloaded). Deduped, then looked up by path.
+const ALL_FILES = [...new Set(ITEMS.flatMap((it) => [it.label, it.word.en, it.word.es]))]
 
 const smoothstep = (a, b, x) => {
   const t = Math.min(1, Math.max(0, (x - a) / (b - a)))
@@ -73,6 +79,7 @@ function CoverPlane({
   tint = 1,
   progress,
   nav,
+  aboutActive,
   children,
 }) {
   const ref = useRef()
@@ -125,10 +132,17 @@ function CoverPlane({
     ref.current.position.y = dy + (cy - dy) * cur.current.b
     ref.current.material.color.setScalar(cur.current.t)
 
+    // Hold the magnified block until the very end, then fade it (0.9→0.98) to hand
+    // off to the room. The block covers the screen with orange the whole way in, so
+    // the room only appears once fully zoomed and there's no flat-orange fill.
+    const mf = aboutActive ? 1 - smoothstep(0.9, 0.98, nav.current.current) : 1
     if (fade) {
-      const o = smoothstep(0.72, 1, progress.current.current)
+      const o = smoothstep(0.72, 1, progress.current.current) * mf
       ref.current.material.opacity = o
       ref.current.visible = o > 0.01
+    } else {
+      ref.current.material.opacity = mf
+      ref.current.visible = mf > 0.01
     }
   })
 
@@ -147,7 +161,7 @@ function CoverPlane({
   )
 }
 
-function MenuItem({ item, labelTex, wordTex, layout, progress, nav, onSelect, dim, onHover }) {
+function MenuItem({ item, labelTex, wordTex, layout, progress, nav, onSelect, dim, onHover, aboutActive, lang }) {
   // Clicks/hover only count at the menu (scrolled in) and not mid-About.
   const active = () =>
     progress.current.current > 0.8 && nav.current.current < 0.3
@@ -165,6 +179,7 @@ function MenuItem({ item, labelTex, wordTex, layout, progress, nav, onSelect, di
         fade={false}
         progress={progress}
         nav={nav}
+        aboutActive={aboutActive}
       >
         <mesh
           position={[
@@ -193,12 +208,13 @@ function MenuItem({ item, labelTex, wordTex, layout, progress, nav, onSelect, di
         </mesh>
       </CoverPlane>
 
-      {/* Word plane — dims when another item is hovered. */}
+      {/* Word plane — dims when another item is hovered. Its anchor can differ per
+          language (the es title PNG may sit differently), so pick by lang. */}
       <CoverPlane
         texture={wordTex}
         z={WORD_Z}
         renderOrder={-1}
-        selfAnchor={item.wordAnchor}
+        selfAnchor={pick(item.wordAnchor, lang)}
         alignAnchor={item.anchor}
         nudge={item.nudge}
         layout={layout}
@@ -206,20 +222,28 @@ function MenuItem({ item, labelTex, wordTex, layout, progress, nav, onSelect, di
         tint={dim ? 0.7 : 1}
         progress={progress}
         nav={nav}
+        aboutActive={aboutActive}
       />
     </group>
   )
 }
 
-export function Menu3D({ progress, nav, onSelect }) {
+export function Menu3D({ progress, nav, onSelect, onHoverChange, aboutActive, lang = 'en' }) {
   const textures = useTexture(ALL_FILES)
   textures.forEach((t) => (t.colorSpace = THREE.SRGBColorSpace))
+  // Look textures up by path so we can pick the block + the current-language title.
+  const texOf = (file) => textures[ALL_FILES.indexOf(file)]
 
   const width = useThree((state) => state.size.width)
   const isSmall = width < SMALL_BREAKPOINT
   const n = ITEMS.length
 
   const [hoveredKey, setHoveredKey] = useState(null)
+  // Update local dim state AND notify React-land (App) which item is hovered.
+  const handleHover = (key) => {
+    setHoveredKey(key)
+    if (onHoverChange) onHoverChange(key)
+  }
 
   return (
     <group>
@@ -233,14 +257,16 @@ export function Menu3D({ progress, nav, onSelect }) {
           <MenuItem
             key={it.key}
             item={it}
-            labelTex={textures[i * 2]}
-            wordTex={textures[i * 2 + 1]}
+            labelTex={texOf(it.label)}
+            wordTex={texOf(it.word[lang])}
             layout={layout}
             progress={progress}
             nav={nav}
             onSelect={onSelect}
             dim={hoveredKey !== null && hoveredKey !== it.key}
-            onHover={setHoveredKey}
+            onHover={handleHover}
+            aboutActive={aboutActive}
+            lang={lang}
           />
         )
       })}
