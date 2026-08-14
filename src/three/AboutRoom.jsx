@@ -118,8 +118,8 @@ const body = (size) => ({
   fontSize: size,
 })
 
-// A clickable link on a wall — bold with a soft drop shadow (troika outline blur +
-// offset), so it lifts off the orange. It grows and its shadow deepens on hover.
+// A clickable link on a wall — bold, with a soft drop shadow (troika's outline blur
+// + offset) so it lifts off the orange. Grows and darkens its shadow on hover.
 function WallLink({ label, url, position, size = 0.18 }) {
   const [hover, setHover] = useState(false)
   return (
@@ -170,7 +170,7 @@ function Wall({ position, rotation, size, color, onFace }) {
 // The small About box, dropped right where the orange block is. It stays hidden
 // until the fly-in is (almost) complete, then the walls fade in and the text
 // pops on — so during the zoom you just see flat orange, and the room "resolves".
-export function AboutRoom({ nav, goWall }) {
+export function AboutRoom({ nav, goWall, lang = 'en' }) {
   const cx = nav.current.cx + ABOUT_END_X
   const cy = nav.current.cy + ABOUT_END_Y
   const wallsRef = useRef()
@@ -194,9 +194,10 @@ export function AboutRoom({ nav, goWall }) {
     setShowText((s) => (s === want ? s : want))
   })
 
-  const back = ABOUT_WALLS.back
-  const left = ABOUT_WALLS.left
-  const right = ABOUT_WALLS.right
+  const walls = ABOUT_WALLS[lang] || ABOUT_WALLS.en
+  const back = walls.back
+  const left = walls.left
+  const right = walls.right
 
   return (
     <group>
@@ -247,7 +248,7 @@ export function AboutRoom({ nav, goWall }) {
               {back.heading.toUpperCase()}
             </Text>
             <Text
-              position={[0, H * 0.02, 0]}
+              position={[0, H * 0.08, 0]}
               {...body(0.17)}
               maxWidth={W * 1.5}
               textAlign="center"
@@ -255,12 +256,18 @@ export function AboutRoom({ nav, goWall }) {
             >
               {back.body}
             </Text>
+            {/* Degree, set apart below the paragraph — small, spaced-out, faded. */}
+            {back.subtitle && (
+              <Text position={[0, -H * 0.38, 0]} {...head(0.13)} letterSpacing={0.14} fillOpacity={0.55}>
+                {back.subtitle.toUpperCase()}
+              </Text>
+            )}
             {back.links.map((link, i) => (
               <WallLink
                 key={i}
                 label={link.label}
                 url={link.url}
-                position={[(i - (back.links.length - 1) / 2) * 1.25, -H * 0.55, 0]}
+                position={[(i - (back.links.length - 1) / 2) * 1.25, -H * 0.6, 0]}
                 size={0.18}
               />
             ))}

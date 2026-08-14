@@ -4,8 +4,8 @@
 // Each skill needs TWO PNGs (transparent background), same size, in public/skills/:
 //     public/skills/bw/<slug>.png      ← black-and-white (shown by default)
 //     public/skills/color/<slug>.png   ← full colour  (revealed as you "paint")
-// Hovering an icon and moving the cursor over it erases the B&W to reveal the
-// colour underneath; paint enough of it and it locks to full colour.
+// Hover an icon and drag across it — you paint the B&W away to reveal the colour
+// under it; colour in enough of it and it stays.
 //
 //   x / y   = where the icon's CENTRE sits, as a % of the viewport (0–100).
 //   size    = scale multiplier on the base icon size (1 = default).
@@ -37,10 +37,12 @@ export const SKILLS = [
 ]
 
 // Faded heading above each row (y = % of the viewport, like the icons above).
+// `label` is { en, es } — the row headings are the only translated bit here; the
+// skill names (Python, React…) are the same in every language.
 export const SKILL_ROWS = [
-  { label: 'Languages',    y: 7 },
-  { label: 'Technologies', y: 41 },
-  { label: 'Tools',        y: 69 },
+  { label: { en: 'Languages',    es: 'Lenguajes' },    y: 7 },
+  { label: { en: 'Technologies', es: 'Tecnologías' },  y: 41 },
+  { label: { en: 'Tools',        es: 'Herramientas' }, y: 69 },
 ]
 
 // Where each icon's two PNGs live, derived from its slug.

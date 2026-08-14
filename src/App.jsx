@@ -6,6 +6,7 @@ import { CAMERA_START_Z, CAMERA_FOV } from './three/config'
 import { HOME_ITEMS, DOCK } from './homeConfig'
 import { EXP_PHOTOS, EXP_ZOOM, EXP_FILL, EXP_DARKEN, DEBUG_HITBOXES } from './experienceConfig'
 import { SKILLS, SKILL_ROWS, bwSrc, colorSrc } from './skillsConfig'
+import { UI, pick } from './i18n'
 import './App.css'
 
 // Sections that have a view when you click their block. Others do nothing (yet).
@@ -22,7 +23,7 @@ const smoothstep = (a, b, x) => {
 }
 
 // The name/title over the entry composite, fading out as the scroll begins.
-function TitleOverlay({ progress }) {
+function TitleOverlay({ progress, lang }) {
   const ref = useRef()
   useEffect(() => {
     let raf
@@ -41,7 +42,7 @@ function TitleOverlay({ progress }) {
   return (
     <div className="title" ref={ref}>
       <h1 className="title__name">Marilyn Joven</h1>
-      <p className="title__role">Creative Engineer</p>
+      <p className="title__role">{UI[lang].role}</p>
     </div>
   )
 }
@@ -49,7 +50,7 @@ function TitleOverlay({ progress }) {
 // "scroll to enter" prompt — tied to scroll progress so it lives ONLY on the entry
 // screen (progress ≈ 0) and fades as you scroll in. Because it's driven by progress
 // (not a one-shot flag), it comes back if you scroll all the way out to the top.
-function ScrollHint({ progress }) {
+function ScrollHint({ progress, lang }) {
   const ref = useRef()
   useEffect(() => {
     let raf
@@ -63,7 +64,7 @@ function ScrollHint({ progress }) {
 
   return (
     <div className="hint" ref={ref}>
-      <span className="hint__pulse">scroll to enter</span>
+      <span className="hint__pulse">{UI[lang].scroll}</span>
     </div>
   )
 }
@@ -77,24 +78,25 @@ const colorFor = (name = '') => {
 }
 
 // One tile — an app icon or a spanning image widget. A link when it has a url.
-function Tile({ item }) {
+function Tile({ item, lang }) {
   const isWidget = item.widget
+  const name = pick(item.name, lang)
   const style = isWidget
     ? { gridColumn: `span ${item.w || 1}`, gridRow: `span ${item.h || 1}` }
     : undefined
 
   const media = isWidget
     ? item.image
-      ? <img className="home__media" src={item.image} alt={item.name || ''} />
-      : <div className="home__placeholder" style={{ background: colorFor(item.name) }}>{item.name}</div>
+      ? <img className="home__media" src={item.image} alt={name || ''} />
+      : <div className="home__placeholder" style={{ background: colorFor(name) }}>{name}</div>
     : item.icon
       ? <img className="home__media" src={item.icon} alt="" />
-      : <span className="home__initial" style={{ background: colorFor(item.name) }}>{(item.name || '?')[0]}</span>
+      : <span className="home__initial" style={{ background: colorFor(name) }}>{(name || '?')[0]}</span>
 
   const inner = (
     <>
       <span className={isWidget ? 'home__widget' : 'home__icon'}>{media}</span>
-      {!isWidget && item.name && <span className="home__label">{item.name}</span>}
+      {!isWidget && name && <span className="home__label">{name}</span>}
     </>
   )
 
@@ -110,17 +112,17 @@ function Tile({ item }) {
   )
 }
 
-function ProjectsHome() {
+function ProjectsHome({ lang }) {
   return (
     <div className="home">
       <div className="home__grid">
         {HOME_ITEMS.map((item, i) => (
-          <Tile key={i} item={item} />
+          <Tile key={i} item={item} lang={lang} />
         ))}
       </div>
       <div className="home__dock">
         {DOCK.map((item, i) => (
-          <Tile key={i} item={item} />
+          <Tile key={i} item={item} lang={lang} />
         ))}
       </div>
     </div>
@@ -128,7 +130,7 @@ function ProjectsHome() {
 }
 
 // ── Experience: six stills stacked into one plane; hovering plays 1→6 ─────────
-function ExperienceFrames() {
+function ExperienceFrames({ lang }) {
   const [frame, setFrame] = useState(0) // 0 = Exp-1 (default) … 5 = Exp-6
   const [selected, setSelected] = useState(null) // clicked photo index, or null
   const timer = useRef(null)
@@ -207,7 +209,7 @@ function ExperienceFrames() {
                   height: `${p.h * 100}%`,
                 }}
                 onClick={() => setSelected(i)}
-                aria-label={`${p.year} — ${p.role}`}
+                aria-label={`${p.year} — ${pick(p.role, lang)}`}
               />
             ))}
         </div>
@@ -220,8 +222,8 @@ function ExperienceFrames() {
           <div className="exp__grade" style={{ '--exp-dark': EXP_DARKEN }} />
           <figure className="exp__stamp" onClick={(e) => e.stopPropagation()}>
             <span className="exp__date">{active.year}</span>
-            <span className="exp__role">{active.role}</span>
-            {active.note && <span className="exp__note">{active.note}</span>}
+            <span className="exp__role">{pick(active.role, lang)}</span>
+            {active.note && <span className="exp__note">{pick(active.note, lang)}</span>}
           </figure>
           <button className="exp__close" onClick={() => setSelected(null)}>
             ✕
@@ -462,7 +464,7 @@ function SkillIcon({ skill }) {
 // ── Skills: tech icons scattered over the red zoom. Each one runs its own cursor
 // follower (see SkillIcon), so they react to the pointer individually. The icons
 // stay hidden through the zoom and pop in together once it lands (is-ready). ────
-function SkillsFloat({ nav }) {
+function SkillsFloat({ nav, lang }) {
   const ref = useRef()
   useEffect(() => {
     let raf
@@ -482,8 +484,8 @@ function SkillsFloat({ nav }) {
   return (
     <div className="skills" ref={ref}>
       {SKILL_ROWS.map((r) => (
-        <p key={r.label} className="skills__rowlabel" style={{ top: `${r.y}%` }}>
-          {r.label}
+        <p key={r.label.en} className="skills__rowlabel" style={{ top: `${r.y}%` }}>
+          {pick(r.label, lang)}
         </p>
       ))}
       {SKILLS.map((s) => (
@@ -494,7 +496,7 @@ function SkillsFloat({ nav }) {
 }
 
 // ── Section overlay: fades in with the zoom, renders the active section ───────
-function SectionOverlay({ nav, activeKey, onClose }) {
+function SectionOverlay({ nav, activeKey, onClose, lang }) {
   const ref = useRef()
   useEffect(() => {
     let raf
@@ -524,11 +526,11 @@ function SectionOverlay({ nav, activeKey, onClose }) {
   return (
     <div className={`section section--${activeKey}`} ref={ref}>
       <button className="section__back" onClick={onClose}>
-        ← Back
+        {UI[lang].back}
       </button>
-      {activeKey === 'projects' && <ProjectsHome />}
-      {activeKey === 'experience' && <ExperienceFrames />}
-      {activeKey === 'skills' && <SkillsFloat nav={nav} />}
+      {activeKey === 'projects' && <ProjectsHome lang={lang} />}
+      {activeKey === 'experience' && <ExperienceFrames lang={lang} />}
+      {activeKey === 'skills' && <SkillsFloat nav={nav} lang={lang} />}
     </div>
   )
 }
@@ -537,7 +539,7 @@ function SectionOverlay({ nav, activeKey, onClose }) {
 // click-through (so the walls stay clickable); only the buttons capture clicks. ──
 const ABOUT_ORDER = ['left', 'back', 'right']
 
-function AboutHud({ nav, activeWall, goWall, onClose }) {
+function AboutHud({ nav, activeWall, goWall, onClose, lang }) {
   const ref = useRef()
   useEffect(() => {
     let raf
@@ -558,7 +560,7 @@ function AboutHud({ nav, activeWall, goWall, onClose }) {
   return (
     <div className="abouthud" ref={ref}>
       <button className="section__back" onClick={onClose}>
-        ← Back
+        {UI[lang].back}
       </button>
       {idx > 0 && (
         <button
@@ -580,7 +582,7 @@ function AboutHud({ nav, activeWall, goWall, onClose }) {
       )}
       {activeWall !== 'back' && (
         <button className="abouthud__center" onClick={() => goWall('back')}>
-          ⌂ Center
+          {UI[lang].center}
         </button>
       )}
     </div>
@@ -593,6 +595,7 @@ function App() {
   const nav = useRef({ target: 0, current: 0, cx: 0, cy: 0, color: null, wall: 'back' })
   const progress = useScrollProgress(nav)
   const [activeKey, setActiveKey] = useState(null)
+  const [lang, setLang] = useState('en') // 'en' | 'es' — flipped by the corner toggle
   // Which About-room wall we're facing (also mirrored into nav for the camera rig).
   const [activeWall, setActiveWall] = useState('back')
   const goWall = (wall) => {
@@ -642,16 +645,27 @@ function App() {
           onSelect={onSelect}
           activeKey={activeKey}
           goWall={goWall}
+          lang={lang}
         />
       </Canvas>
 
-      <TitleOverlay progress={progress} />
-      <SectionOverlay nav={nav} activeKey={activeKey} onClose={closeSection} />
+      <TitleOverlay progress={progress} lang={lang} />
+      <SectionOverlay nav={nav} activeKey={activeKey} onClose={closeSection} lang={lang} />
       {activeKey === 'about' && (
-        <AboutHud nav={nav} activeWall={activeWall} goWall={goWall} onClose={closeSection} />
+        <AboutHud nav={nav} activeWall={activeWall} goWall={goWall} onClose={closeSection} lang={lang} />
       )}
 
-      <ScrollHint progress={progress} />
+      <ScrollHint progress={progress} lang={lang} />
+
+      {/* Language toggle — always available, top-right. Shows the language you'd
+          switch TO. */}
+      <button
+        className="langtoggle"
+        onClick={() => setLang((l) => (l === 'en' ? 'es' : 'en'))}
+        aria-label={`Switch language to ${UI[lang].other}`}
+      >
+        {UI[lang].other}
+      </button>
     </div>
   )
 }

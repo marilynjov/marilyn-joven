@@ -163,7 +163,7 @@ function LoadingFallback() {
   )
 }
 
-export function Scene({ progress, nav, onSelect, activeKey, goWall }) {
+export function Scene({ progress, nav, onSelect, activeKey, goWall, lang }) {
   const inAbout = activeKey === 'about'
   return (
     <>
@@ -173,8 +173,8 @@ export function Scene({ progress, nav, onSelect, activeKey, goWall }) {
       <AboutFill nav={nav} about={inAbout} />
       <Suspense fallback={<LoadingFallback />}>
         <Layers />
-        <Menu3D progress={progress} nav={nav} onSelect={onSelect} aboutActive={inAbout} />
-        {inAbout && <AboutRoom nav={nav} goWall={goWall} />}
+        <Menu3D progress={progress} nav={nav} onSelect={onSelect} aboutActive={inAbout} lang={lang} />
+        {inAbout && <AboutRoom nav={nav} goWall={goWall} lang={lang} />}
       </Suspense>
     </>
   )

@@ -3,42 +3,75 @@
 // `back` is the wall you land on; `left` / `right` are the side walls you turn to.
 // Edit freely; keep lines short so they read well in perspective on the wall.
 // ─────────────────────────────────────────────────────────────────────────────
+// Wall text, per language. The component reads ABOUT_WALLS[lang]. Links are the
+// same in both languages (GitHub / LinkedIn / CV), so only the labels that differ
+// need translating.
 export const ABOUT_WALLS = {
-  back: {
-    heading: 'About',
-    body:
-      "I'm a creative engineer who builds at the seam between design and code — " +
-      'turning abstract data and ideas into things people can see, touch, and move through.',
-    // Clickable links shown under the description.
-    links: [
-      { label: 'GitHub', url: 'https://github.com/marilynjov' },
-      { label: 'LinkedIn', url: 'https://www.linkedin.com/in/marilyn-stephany-joven' },
-      { label: 'CV (PDF)', url: '/resume.pdf' },
-    ],
+  en: {
+    back: {
+      heading: 'About',
+      subtitle: 'MSc in Systems and Computer Engineering',
+      body:
+        "I'm a creative engineer who builds at the seam between design and code — " +
+        'turning abstract data and ideas into things people can see, touch, and move through.',
+      links: [
+        { label: 'GitHub', url: 'https://github.com/marilynjov' },
+        { label: 'LinkedIn', url: 'https://www.linkedin.com/in/marilyn-stephany-joven' },
+        { label: 'CV (PDF)', url: '/resume.pdf' },
+      ],
+    },
+    left: {
+      heading: 'What I bring',
+      lines: ['Creative technology', 'Data visualization', 'Interactive systems'],
+      languagesHeading: 'Languages',
+      languages: [
+        'Spanish — Native',
+        'English — Advanced',
+        'French — Basic',
+        'German — Basic',
+        'Portuguese — Basic',
+      ],
+    },
+    right: {
+      heading: 'This site',
+      body:
+        'More than a portfolio, this is a little window into who I am. Beyond the code I ' +
+        'paint, take photographs, and draw on my iPad — and, above all, I love to program. ' +
+        'Every section here is a piece of that.',
+    },
   },
-  left: {
-    heading: 'What I bring',
-    lines: [
-      'Creative technology',
-      'Data visualization',
-      'Interactive systems',
-      'Software craft',
-    ],
-    languagesHeading: 'Languages',
-    languages: [
-      'Spanish — Native',
-      'English — Advanced',
-      'French — Basic',
-      'German — Basic',
-      'Portuguese — Basic',
-    ],
-  },
-  right: {
-    heading: 'This site',
-    body:
-      'More than a portfolio, this is a little window into who I am. Beyond the code I ' +
-      'paint, take photographs, and draw on my iPad — and, above all, I love to program. ' +
-      'Every section here is a piece of that.',
+  es: {
+    back: {
+      heading: 'Sobre mí',
+      subtitle: 'Maestría en Ingeniería de Sistemas y Computación',
+      body:
+        'Soy una ingeniera creativa que construye en la costura entre el diseño y el código — ' +
+        'convirtiendo datos e ideas abstractas en cosas que la gente puede ver, tocar y recorrer.',
+      links: [
+        { label: 'GitHub', url: 'https://github.com/marilynjov' },
+        { label: 'LinkedIn', url: 'https://www.linkedin.com/in/marilyn-stephany-joven' },
+        { label: 'CV (PDF)', url: '/resume.pdf' },
+      ],
+    },
+    left: {
+      heading: 'Lo que aporto',
+      lines: ['Tecnología creativa', 'Visualización de datos', 'Sistemas interactivos'],
+      languagesHeading: 'Idiomas',
+      languages: [
+        'Español — Nativo',
+        'Inglés — Avanzado',
+        'Francés — Básico',
+        'Alemán — Básico',
+        'Portugués — Básico',
+      ],
+    },
+    right: {
+      heading: 'Esta página',
+      body:
+        'Más que un portafolio, esta es una pequeña parte de quién soy. Más allá del código ' +
+        'me gusta pintar, tomar fotos y dibujar en mi iPad — y, sobre todo, me encanta programar. ' +
+        'Cada sección aquí es una parte de eso.',
+    },
   },
 }
 
