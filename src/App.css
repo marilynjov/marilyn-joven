@@ -58,27 +58,23 @@
   padding-left: 0.42em; /* balance the trailing letter-spacing */
 }
 
-/* Small "scroll to enter" hint, centered near the bottom. */
+/* Small "scroll to enter" hint, centered near the bottom. Its opacity is driven by
+   scroll progress in JS (fades as you scroll in); the inner span pulses, so the two
+   multiply — a pulsing prompt that lives only on the entry screen. */
 .hint {
   position: fixed;
   left: 50%;
-  bottom: 6vh;
+  top: 6vh;
   transform: translateX(-50%);
   color: rgba(255, 255, 255, 0.7);
   font: 14px/1 system-ui, sans-serif;
   letter-spacing: 0.28em;
   text-transform: uppercase;
   pointer-events: none;
-  animation: hint-pulse 2.4s ease-in-out infinite;
-  transition: opacity 0.8s ease;
 }
-
-/* Fade the hint out after the first scroll/touch. Must also cancel the pulse
-   animation — a running animation overrides the plain opacity, so it'd keep
-   re-appearing otherwise. */
-body.interacted .hint {
-  opacity: 0;
-  animation: none;
+.hint__pulse {
+  display: inline-block;
+  animation: hint-pulse 2.4s ease-in-out infinite;
 }
 
 @keyframes hint-pulse {

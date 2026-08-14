@@ -1,7 +1,7 @@
-import { Suspense, useRef, useState } from 'react'
+import { Suspense, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { useFrame } from '@react-three/fiber'
-import { Text } from '@react-three/drei'
+import { Text, useTexture } from '@react-three/drei'
 import {
   ROOM_HALF_W,
   ROOM_HALF_H,
@@ -13,6 +13,7 @@ import {
 } from './config'
 import {
   ABOUT_WALLS,
+  ABOUT_PHOTO,
   ROOM_COLORS,
   ROOM_TEXT,
   ROOM_FONT,
@@ -21,8 +22,74 @@ import {
 
 const W = ROOM_HALF_W
 const H = ROOM_HALF_H
+const PHOTO = ABOUT_PHOTO
 const DEPTH = ROOM_NEAR_Z - ROOM_BACK_Z // side-wall / floor / ceiling length along z
 const EPS = 0.05 // lift text a hair off the wall to avoid z-fighting
+
+// A framed horizontal photo, rendered INSIDE a wall's group so it inherits that
+// wall's position/rotation. Local +z points into the room, so small +z offsets lift
+// the mat and photo off the frame. Height follows the image's aspect (no stretch).
+const SHADOW_PAD = 0.3 // world units of soft shadow bleed around the frame
+
+function WallFrame({ photo }) {
+  const tex = useTexture(photo.src)
+  tex.colorSpace = THREE.SRGBColorSpace
+  const aspect = tex.image ? tex.image.width / tex.image.height : 1.5
+  const w = photo.width
+  const h = w / aspect
+  const fw = photo.frameWidth
+  const mw = photo.matColor ? photo.matWidth : 0
+  const outerW = w + (mw + fw) * 2
+  const outerH = h + (mw + fw) * 2
+
+  // Soft drop shadow: an offscreen-blurred dark rounded rect baked to a canvas
+  // texture (the scene is unlit, so there are no real shadows). Only the blur is
+  // kept — the solid shape is drawn off-canvas via shadowOffsetX.
+  const shadowTex = useMemo(() => {
+    const ppu = 128
+    const cw = Math.round((outerW + SHADOW_PAD * 2) * ppu)
+    const ch = Math.round((outerH + SHADOW_PAD * 2) * ppu)
+    const c = document.createElement('canvas')
+    c.width = cw
+    c.height = ch
+    const ctx = c.getContext('2d')
+    ctx.fillStyle = '#000'
+    ctx.shadowColor = 'rgba(0,0,0,0.95)'
+    ctx.shadowBlur = SHADOW_PAD * ppu * 0.65
+    ctx.shadowOffsetX = cw // push the shape off-canvas so only its shadow lands
+    ctx.beginPath()
+    ctx.roundRect(SHADOW_PAD * ppu - cw, SHADOW_PAD * ppu, outerW * ppu, outerH * ppu, 6)
+    ctx.fill()
+    return new THREE.CanvasTexture(c)
+  }, [outerW, outerH])
+
+  // depthTest off + renderOrder makes the frame stack layer by draw order and sit
+  // ON the wall from ANY angle — otherwise the shadow, sitting a hair off the wall,
+  // loses the depth test at grazing angles (only shows when viewed head-on/focused).
+  return (
+    <group position={[photo.x, photo.y, 0.02]}>
+      {/* shadow, behind the frame, nudged down-right (lit from upper-left) */}
+      <mesh position={[0.06, -0.07, -0.01]} renderOrder={1}>
+        <planeGeometry args={[outerW + SHADOW_PAD * 2, outerH + SHADOW_PAD * 2]} />
+        <meshBasicMaterial map={shadowTex} transparent opacity={0.6} depthTest={false} depthWrite={false} toneMapped={false} />
+      </mesh>
+      <mesh renderOrder={2}>
+        <planeGeometry args={[outerW, outerH]} />
+        <meshBasicMaterial color={photo.frameColor} transparent depthTest={false} depthWrite={false} toneMapped={false} />
+      </mesh>
+      {photo.matColor && (
+        <mesh position={[0, 0, 0.006]} renderOrder={3}>
+          <planeGeometry args={[w + mw * 2, h + mw * 2]} />
+          <meshBasicMaterial color={photo.matColor} transparent depthTest={false} depthWrite={false} toneMapped={false} />
+        </mesh>
+      )}
+      <mesh position={[0, 0, 0.012]} renderOrder={4}>
+        <planeGeometry args={[w, h]} />
+        <meshBasicMaterial map={tex} transparent depthTest={false} depthWrite={false} toneMapped={false} />
+      </mesh>
+    </group>
+  )
+}
 
 const smoothstep = (a, b, x) => {
   const t = Math.min(1, Math.max(0, (x - a) / (b - a)))
@@ -43,13 +110,45 @@ const head = (size) => ({
   ...baseText,
   font: ROOM_FONT_BOLD,
   fontSize: size,
-  letterSpacing: 0.14,
+  letterSpacing: 0.02,
 })
 const body = (size) => ({
   ...baseText,
   font: ROOM_FONT,
   fontSize: size,
 })
+
+// A clickable link on a wall — bold with a soft drop shadow (troika outline blur +
+// offset), so it lifts off the orange. It grows and its shadow deepens on hover.
+function WallLink({ label, url, position, size = 0.18 }) {
+  const [hover, setHover] = useState(false)
+  return (
+    <group position={position} scale={hover ? 1.08 : 1}>
+      <Text
+        {...body(size)}
+        font={ROOM_FONT_BOLD}
+        outlineColor="#2a0f04"
+        outlineOpacity={hover ? 0.9 : 0.6}
+        outlineWidth="2%"
+        outlineBlur="20%"
+        outlineOffsetX="7%"
+        outlineOffsetY="7%"
+        onClick={(e) => (e.stopPropagation(), window.open(url, '_blank'))}
+        onPointerOver={(e) => {
+          e.stopPropagation()
+          setHover(true)
+          document.body.style.cursor = 'pointer'
+        }}
+        onPointerOut={() => {
+          setHover(false)
+          document.body.style.cursor = 'auto'
+        }}
+      >
+        {label}
+      </Text>
+    </group>
+  )
+}
 
 // One flat orange face. `onFace` (optional) makes it clickable to turn to it.
 // Transparent so it can fade in — its opacity is driven each frame by the room.
@@ -142,61 +241,76 @@ export function AboutRoom({ nav, goWall }) {
       <Suspense fallback={null}>
         {showText && (
         <group>
-          {/* ── Back wall ── */}
+          {/* ── Back wall: description + a row of clickable links ── */}
           <group position={[cx, cy, ROOM_BACK_Z + EPS]}>
-            <Text position={[0, H * 0.5, 0]} {...head(0.5)}>
+            <Text position={[0, H * 0.52, 0]} {...head(0.42)}>
               {back.heading.toUpperCase()}
             </Text>
             <Text
-              position={[0, -H * 0.05, 0]}
-              {...body(0.2)}
+              position={[0, H * 0.02, 0]}
+              {...body(0.17)}
               maxWidth={W * 1.5}
               textAlign="center"
               lineHeight={1.45}
             >
               {back.body}
             </Text>
+            {back.links.map((link, i) => (
+              <WallLink
+                key={i}
+                label={link.label}
+                url={link.url}
+                position={[(i - (back.links.length - 1) / 2) * 1.25, -H * 0.55, 0]}
+                size={0.18}
+              />
+            ))}
+            {PHOTO.src && PHOTO.wall === 'back' && <WallFrame photo={PHOTO} />}
           </group>
 
-          {/* ── Left wall (faces +x) ── */}
+          {/* ── Left wall (faces +x): strengths + languages on the left, photo right ── */}
           <group position={[cx - W + EPS, cy, ROOM_MID_Z]} rotation={[0, Math.PI / 2, 0]}>
-            <Text position={[0, H * 0.55, 0]} {...head(0.32)}>
-              {left.heading.toUpperCase()}
-            </Text>
-            {left.lines.map((l, i) => (
-              <Text key={i} position={[0, H * 0.14 - i * 0.28, 0]} {...body(0.18)}>
-                {l}
+            {/* Text shifted left so the framed photo (photo.x, right) sits beside it. */}
+            <group position={[-1.3, 0, 0]}>
+              <Text position={[0, H * 0.62, 0]} {...head(0.21)}>
+                {left.heading.toUpperCase()}
               </Text>
-            ))}
-            {left.meta.map((m, i) => (
-              <Text
-                key={`m${i}`}
-                position={[0, -H * 0.5 - i * 0.24, 0]}
-                {...body(0.13)}
-                fillOpacity={0.75}
-              >
-                {m}
+              {left.lines.map((l, i) => (
+                <Text key={i} position={[0, H * 0.32 - i * 0.2, 0]} {...body(0.125)}>
+                  {l}
+                </Text>
+              ))}
+              <Text position={[0, -H * 0.24, 0]} {...head(0.13)} fillOpacity={0.85}>
+                {left.languagesHeading.toUpperCase()}
               </Text>
-            ))}
+              {left.languages.map((l, i) => (
+                <Text
+                  key={`lang${i}`}
+                  position={[0, -H * 0.38 - i * 0.17, 0]}
+                  {...body(0.11)}
+                  fillOpacity={0.8}
+                >
+                  {l}
+                </Text>
+              ))}
+            </group>
+            {PHOTO.src && PHOTO.wall === 'left' && <WallFrame photo={PHOTO} />}
           </group>
 
-          {/* ── Right wall (faces -x); links are clickable ── */}
+          {/* ── Right wall (faces -x): what this site is ── */}
           <group position={[cx + W - EPS, cy, ROOM_MID_Z]} rotation={[0, -Math.PI / 2, 0]}>
-            <Text position={[0, H * 0.55, 0]} {...head(0.32)}>
+            <Text position={[0, H * 0.5, 0]} {...head(0.28)}>
               {right.heading.toUpperCase()}
             </Text>
-            {right.links.map((link, i) => (
-              <Text
-                key={i}
-                position={[0, H * 0.12 - i * 0.34, 0]}
-                {...body(0.22)}
-                onClick={(e) => (e.stopPropagation(), window.open(link.url, '_blank'))}
-                onPointerOver={setCursor('pointer')}
-                onPointerOut={setCursor('auto')}
-              >
-                {link.label}
-              </Text>
-            ))}
+            <Text
+              position={[0, -H * 0.02, 0]}
+              {...body(0.165)}
+              maxWidth={W * 1.5}
+              textAlign="center"
+              lineHeight={1.5}
+            >
+              {right.body}
+            </Text>
+            {PHOTO.src && PHOTO.wall === 'right' && <WallFrame photo={PHOTO} />}
           </group>
         </group>
         )}

@@ -46,6 +46,28 @@ function TitleOverlay({ progress }) {
   )
 }
 
+// "scroll to enter" prompt — tied to scroll progress so it lives ONLY on the entry
+// screen (progress ≈ 0) and fades as you scroll in. Because it's driven by progress
+// (not a one-shot flag), it comes back if you scroll all the way out to the top.
+function ScrollHint({ progress }) {
+  const ref = useRef()
+  useEffect(() => {
+    let raf
+    const tick = () => {
+      if (ref.current) ref.current.style.opacity = Math.max(0, 1 - progress.current.current / 0.1)
+      raf = requestAnimationFrame(tick)
+    }
+    tick()
+    return () => cancelAnimationFrame(raf)
+  }, [progress])
+
+  return (
+    <div className="hint" ref={ref}>
+      <span className="hint__pulse">scroll to enter</span>
+    </div>
+  )
+}
+
 // ── Projects: an iPad-style homescreen, driven entirely by homeConfig.js ──────
 const PLACEHOLDER_COLORS = ['#f4a3c0', '#8fd0c4', '#f7d774', '#a7b6f0', '#f0a780', '#b6e08a']
 const colorFor = (name = '') => {
@@ -608,17 +630,6 @@ function App() {
     return () => cancelAnimationFrame(raf)
   }, [activeKey])
 
-  // Hide the "scroll to enter" hint after the first interaction.
-  useEffect(() => {
-    const hide = () => document.body.classList.add('interacted')
-    window.addEventListener('wheel', hide, { once: true })
-    window.addEventListener('touchstart', hide, { once: true })
-    return () => {
-      window.removeEventListener('wheel', hide)
-      window.removeEventListener('touchstart', hide)
-    }
-  }, [])
-
   return (
     <div className="stage">
       <Canvas
@@ -641,7 +652,7 @@ function App() {
         <AboutHud nav={nav} activeWall={activeWall} goWall={goWall} onClose={closeSection} />
       )}
 
-      <div className="hint">scroll to enter</div>
+      <ScrollHint progress={progress} />
     </div>
   )
 }
