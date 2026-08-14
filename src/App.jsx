@@ -13,7 +13,7 @@ const SECTIONS = new Set(['about', 'projects', 'experience', 'skills'])
 
 // Experience: six full-frame stills that together form one short animation.
 // Landing on the section shows Exp-1; hovering plays 1→6 and holds on 6.
-const EXP_FRAMES = ['/Exp-1.png', '/Exp-2.png', '/Exp-3.png', '/Exp-4.png', '/Exp-5.png', '/Exp-6.png']
+const EXP_FRAMES = ['/experience/Exp-1.png', '/experience/Exp-2.png', '/experience/Exp-3.png', '/experience/Exp-4.png', '/experience/Exp-5.png', '/experience/Exp-6.png']
 const EXP_FRAME_MS = 110 // per-frame duration of the hover animation
 
 const smoothstep = (a, b, x) => {
@@ -278,10 +278,9 @@ function SkillIcon({ skill }) {
   const floatRef = useRef() // inner element we lean toward the cursor
   const st = useRef({ bwCtx: null, colorCtx: null, bwImg: null, w: 0, h: 0, ready: false, painted: 0, locked: false, last: null, reset: null })
 
-  // Each icon runs its OWN follower: it leans toward the cursor based on the
-  // vector from ITS centre, with a distance falloff so only the icons near the
-  // pointer react. That makes every icon respond individually instead of the
-  // whole field sliding together.
+  // Each icon leans toward the cursor on its OWN — from its own centre, with a
+  // distance falloff so only the ones near the pointer react. So the field feels
+  // alive per-icon instead of sliding around together.
   useEffect(() => {
     const iconEl = iconRef.current
     const floatEl = floatRef.current

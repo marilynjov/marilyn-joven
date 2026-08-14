@@ -70,7 +70,7 @@ export const ROOM_FONT_BOLD = '/fonts/Inter-Bold.woff'
 //   width : frame width in world units (the room is ~5.6 wide, ~3.4 tall)
 //   x / y : offset along that wall (world units; +x right, +y up)
 export const ABOUT_PHOTO = {
-  src: '/yo.JPG', // note: case-sensitive on deploy — file is yo.JPG
+  src: '/about/yo.JPG', // note: case-sensitive on deploy — file is yo.JPG
   wall: 'left',
   width: 1.7,
   x: 1.5, // to the right of the (left-shifted) text
