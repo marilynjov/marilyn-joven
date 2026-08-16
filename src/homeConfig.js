@@ -13,20 +13,19 @@
 //     - `url` is optional (drop it for a non-clickable widget).
 //     - No `image` yet → a placeholder tile so the layout still works.
 //
-// Put images in  public/projects/  and reference them as  '/projects/<file>'.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const HOME_ITEMS = [
   // — widgets (big image tiles) —
-  { widget: true, name: 'Procreate', image: '/projects/widget-3.jpg', url: 'https://example.com', w: 2, h: 2 },
-  { widget: true, name: 'Indigo', image: '/projects/indigo.png', url: 'https://example.com', w: 2, h: 1 },
-  { widget: true, name: 'Procreate', image: '/projects/widget-1.jpg', url: 'https://example.com', w: 3, h: 2 },
+  { widget: true, name: 'Procreate', image: '/projects/widget-3.jpg',  w: 2, h: 2 },
+  { widget: true, name: 'Indigo', image: '/projects/indigo.png', w: 2, h: 1 },
+  { widget: true, name: 'Procreate', image: '/projects/widget-1.jpg', w: 3, h: 2 },
 
   // — apps (small icons) — `name` may be a string or { en, es } (see i18n pick()).
   { name: { en: 'Portfolio', es: 'Portafolio' }, url: 'https://marilyn-joven.vercel.app/', icon: '/projects/portfolio.png' },
   { name: { en: 'My Weather', es: 'Mi Clima' }, url: 'https://weather-gamma-blue.vercel.app/',icon: '/projects/myweather-icon.png' },
   { name: 'Posture Guard', url: 'https://notion.so',icon: '/projects/postureguard-icon.png'},
-  { name: { en: 'Thesis', es: 'Tesis' }, url: 'https://arc.net/l/quote/vhzdhzom', icon: '/projects/github.png' },
+  { name: { en: 'Thesis', es: 'Tesis' }, url: 'https://arc.net/l/quote/vhzdhzom', icon: '/projects/tesis.png' },
 ]
 
 export const DOCK = [

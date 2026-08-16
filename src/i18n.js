@@ -13,6 +13,9 @@ export const UI = {
     back: '← Back',
     center: '⌂ Center',
     other: 'Español', // label on the toggle → the language you'd switch TO
+    cv: '/cv/cv-en.pdf', // served file
+    cvName: 'Marilyn Joven — CV (EN).pdf', // friendly name the download saves as
+    cvLabel: 'Download CV',
   },
   es: {
     role: 'Ingeniera Creativa',
@@ -20,6 +23,9 @@ export const UI = {
     back: '← Volver',
     center: '⌂ Centro',
     other: 'English',
+    cv: '/cv/cv-es.pdf',
+    cvName: 'Marilyn Joven — HV (ES).pdf',
+    cvLabel: 'Descargar HV',
   },
 }
 

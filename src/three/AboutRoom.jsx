@@ -8,8 +8,6 @@ import {
   ROOM_BACK_Z,
   ROOM_NEAR_Z,
   ROOM_MID_Z,
-  ABOUT_END_X,
-  ABOUT_END_Y,
 } from './config'
 import {
   ABOUT_WALLS,
@@ -171,8 +169,8 @@ function Wall({ position, rotation, size, color, onFace }) {
 // until the fly-in is (almost) complete, then the walls fade in and the text
 // pops on — so during the zoom you just see flat orange, and the room "resolves".
 export function AboutRoom({ nav, goWall, lang = 'en' }) {
-  const cx = nav.current.cx + ABOUT_END_X
-  const cy = nav.current.cy + ABOUT_END_Y
+  const cx = nav.current.cx + nav.current.endX
+  const cy = nav.current.cy + nav.current.endY
   const wallsRef = useRef()
   const [showText, setShowText] = useState(false)
 
@@ -244,7 +242,7 @@ export function AboutRoom({ nav, goWall, lang = 'en' }) {
         <group>
           {/* ── Back wall: description + a row of clickable links ── */}
           <group position={[cx, cy, ROOM_BACK_Z + EPS]}>
-            <Text position={[0, H * 0.52, 0]} {...head(0.42)}>
+            <Text position={[0, H * 0.62, 0]} {...head(0.42)}>
               {back.heading.toUpperCase()}
             </Text>
             <Text
@@ -278,7 +276,7 @@ export function AboutRoom({ nav, goWall, lang = 'en' }) {
           <group position={[cx - W + EPS, cy, ROOM_MID_Z]} rotation={[0, Math.PI / 2, 0]}>
             {/* Text shifted left so the framed photo (photo.x, right) sits beside it. */}
             <group position={[-1.3, 0, 0]}>
-              <Text position={[0, H * 0.62, 0]} {...head(0.21)}>
+              <Text position={[0, H * 0.5, 0]} {...head(0.21)}>
                 {left.heading.toUpperCase()}
               </Text>
               {left.lines.map((l, i) => (

@@ -77,28 +77,69 @@
   animation: hint-pulse 2.4s ease-in-out infinite;
 }
 
-/* Language toggle — fixed top-right, above everything. Shows the language you'd
-   switch TO (so 'Español' while you're reading English). */
-.langtoggle {
+/* Top-right controls — fixed above everything: CV download + language toggle. */
+.topright {
   position: fixed;
   top: clamp(1rem, 3vw, 2rem);
   right: clamp(1rem, 3vw, 2rem);
   z-index: 4;
-  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* CV download — a small pill: down-arrow icon + "CV". */
+.cvdownload {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+  padding: 0.34rem 0.7rem;
+  border-radius: 999px;
   background: rgba(0, 0, 0, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.4);
-  border-radius: 999px;
   color: #fff;
-  font: inherit;
   font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  font-size: 0.85rem;
-  letter-spacing: 0.04em;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-decoration: none;
   cursor: pointer;
   transition: background 0.2s ease, border-color 0.2s ease;
 }
-.langtoggle:hover {
+.cvdownload svg {
+  display: block;
+}
+.cvdownload:hover {
   background: rgba(0, 0, 0, 0.45);
   border-color: rgba(255, 255, 255, 0.8);
+}
+
+/* Language toggle — a compact EN | ES segmented control (active segment filled). */
+.langtoggle {
+  display: inline-flex;
+  padding: 2px;
+  gap: 2px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 999px;
+}
+.langtoggle button {
+  padding: 0.28rem 0.55rem;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.65);
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.langtoggle button:hover {
+  color: #fff;
+}
+.langtoggle button.is-active {
+  background: rgba(255, 255, 255, 0.92);
+  color: #141414;
 }
 
 @keyframes hint-pulse {
@@ -289,6 +330,7 @@
 }
 
 .exp {
+  --exp-scale: 1.1; /* bump the strip (frames, hover boxes, caption) a little bigger */
   position: absolute;
   inset: 0;
   overflow: hidden;
@@ -303,7 +345,19 @@
   left: 50%;
   width: min(100vw, calc(100vh * 2388 / 1668));
   height: min(100vh, calc(100vw * 1668 / 2388));
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) scale(var(--exp-scale));
+}
+
+/* Mirrors .exp__stage exactly, so the darken + caption sit on the IMAGE rather than
+   the viewport — keeping the text on the photo when the frame is letterboxed. */
+.exp__imgbox {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(100vw, calc(100vh * 2388 / 1668));
+  height: min(100vh, calc(100vw * 1668 / 2388));
+  transform: translate(-50%, -50%) scale(var(--exp-scale));
+  pointer-events: none; /* clicks fall through to close; the stamp opts back in */
 }
 
 /* Inner layer that scales toward the clicked photo (kept separate so the stage's
@@ -356,19 +410,17 @@
 
 /* A soft darken anchored to the bottom-right corner (where the stamp sits) plus a
    whisper of overall shade — just enough to lift the orange type off the photo. */
-.exp__grade {
+/* Flat dim across the whole viewport — every frame (focused + peeking neighbours)
+   sits under the same darkness. */
+.exp__dim {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(
-      115% 85% at 100% 100%,
-      rgba(0, 0, 0, var(--exp-dark, 0.62)),
-      rgba(0, 0, 0, 0) 55%
-    ),
-    rgba(0, 0, 0, calc(var(--exp-dark, 0.62) * 0.28));
+  background: rgba(0, 0, 0, calc(var(--exp-dark, 0.62) * 0.28));
   opacity: 0;
+  pointer-events: none;
   animation: exp-fade 0.6s ease 0.45s forwards;
 }
+
 @keyframes exp-fade {
   to {
     opacity: 1;
@@ -378,9 +430,11 @@
 /* Date stamp, bottom-right, like the imprint burned onto a film photo. */
 .exp__stamp {
   position: absolute;
-  right: calc(clamp(1.1rem, 5vw, 4rem) + 100px);
+  right: calc(clamp(1.1rem, 5vw, 4rem) + 1px);
   bottom: clamp(1.5rem, 5vh, 3.2rem);
   margin: 0;
+  z-index: 2; /* above the side nav zones so the caption stays inert, not clickable */
+  pointer-events: auto; /* re-enable (parent .exp__imgbox turns pointer events off) */
   cursor: default;
   display: flex;
   flex-direction: column;
@@ -432,6 +486,7 @@
   right: clamp(1rem, 3vw, 2rem);
   width: 2.2rem;
   height: 2.2rem;
+  z-index: 3; /* above the side nav zones so it stays clickable */
   display: grid;
   place-items: center;
   background: rgba(0, 0, 0, 0.35);
@@ -446,6 +501,52 @@
 }
 .exp__close:hover {
   background: rgba(0, 0, 0, 0.6);
+}
+
+/* Prev / next — the whole left/right side of the screen is clickable, with just the
+   arrow glyph near its edge (no button chrome). A faint gradient hints the zone. */
+.exp__nav {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: clamp(4.5rem, 22vw, 15rem);
+  display: flex;
+  align-items: center;
+  padding: 0 clamp(1rem, 3vw, 2.5rem);
+  background: transparent;
+  border: none;
+  color: #ffbb6e;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  z-index: 1;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7);
+  animation: exp-fade 0.5s ease 0.85s forwards;
+  transition: color 0.2s ease, background 0.25s ease, transform 0.15s ease;
+}
+.exp__nav--prev {
+  left: 0;
+  justify-content: flex-start;
+}
+.exp__nav--next {
+  right: 0;
+  justify-content: flex-end;
+}
+.exp__nav:hover {
+  color: #ffe0b0;
+}
+.exp__nav--prev:hover {
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.28), transparent);
+}
+.exp__nav--next:hover {
+  background: linear-gradient(to left, rgba(0, 0, 0, 0.28), transparent);
+}
+.exp__nav--prev:hover {
+  transform: translateX(-3px);
+}
+.exp__nav--next:hover {
+  transform: translateX(3px);
 }
 
 .exp__year {

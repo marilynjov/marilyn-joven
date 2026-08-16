@@ -11,10 +11,10 @@
 // `role` and `note` are { en, es }; the geometry/year are shared across languages.
 export const EXP_PHOTOS = [
   { x: 0.123, y: 0.503, w: 0.14, h: 0.145, year: '2022',
-    role: { en: 'Teaching Assistant · Universidad de los Andes', es: 'Asistente docente · Universidad de los Andes' },
+    role: { en: 'Teaching Assistant · Universidad de los Andes', es: 'Monitora · Universidad de los Andes' },
     note: {
-      en: '2022–24. Supported the Languages & Machines course — problem-solving, grading, and academic follow-up for 40+ students.',
-      es: '2022–24. Apoyé el curso de Lenguajes y Máquinas — resolución de problemas, calificación y seguimiento académico para más de 40 estudiantes.',
+      en: 'Aug 2022 – Jun 2024. Supported the Languages & Machines course — problem-solving, grading, and academic follow-up for 40+ students.',
+      es: 'Ago 2022 – Jun 2024. Brindé apoyo en el curso de Lenguajes y Máquinas — resolución de problemas, calificación y seguimiento académico para más de 40 estudiantes.',
     } },
   { x: 0.287, y: 0.503, w: 0.14, h: 0.145, year: '2024',
     role: { en: 'Research Assistant · Universidad de los Andes', es: 'Asistente de investigación · Universidad de los Andes' },
@@ -31,15 +31,15 @@ export const EXP_PHOTOS = [
   { x: 0.615, y: 0.503, w: 0.14, h: 0.145, year: '2024',
     role: { en: 'Full-Stack Developer · Verivolt', es: 'Desarrolladora Full-Stack · Verivolt' },
     note: {
-      en: '2024–25. Led frontend for hardware-operations automation — UI design, data visualization, and backend integration that improved workflows.',
-      es: '2024–25. Lideré el frontend para la automatización de operaciones de hardware — diseño de UI, visualización de datos e integración con el backend que mejoraron los flujos de trabajo.',
+      en: 'May 2024 – Sep 2025. Led frontend development for hardware-operations automation — UI design, data visualization, and backend integration that improved workflows.',
+      es: 'May 2024 – Sep 2025. Lideré el desarrollo frontend para la automatización de operaciones de hardware — diseño de UI, visualización de datos e integración con el backend que mejoraron los flujos de trabajo.',
     } },
-  // The two Graduate Assistant roles at Uniandes, merged into one stamp.
+  // Two Graduate Assistant roles at Uniandes, merged into one stamp.
   { x: 0.778, y: 0.503, w: 0.14, h: 0.145, year: '2025',
     role: { en: 'Graduate Assistant · Universidad de los Andes', es: 'Asistente graduada · Universidad de los Andes' },
     note: {
-      en: '2025–26. Full-stack work on the No Estás Solx platform, now automating institutional processes and QA for the Digital Transformation Vice Rectorate.',
-      es: '2025–26. Trabajo full-stack en la plataforma No Estás Solx, ahora automatizando procesos institucionales y QA para la Vicerrectoría de Transformación Digital.',
+      en: 'Jan 2025 – Jun 2026. Full-stack work on the No Estás Solx platform, now automating institutional processes and QA for the Digital Transformation Vice Rectorate.',
+      es: 'Ene 2025 – Jun 2026. Trabajo full-stack en la plataforma No Estás Solx, y automatizando procesos institucionales con QA para la Vicerrectoría de Transformación Digital.',
     } },
 ]
 
