@@ -24,7 +24,7 @@ export const HOME_ITEMS = [
   // — apps (small icons) — `name` may be a string or { en, es } (see i18n pick()).
   { name: { en: 'Portfolio', es: 'Portafolio' }, url: 'https://marilyn-joven.vercel.app/', icon: '/projects/portfolio.png' },
   { name: { en: 'My Weather', es: 'Mi Clima' }, url: 'https://weather-gamma-blue.vercel.app/',icon: '/projects/myweather-icon.png' },
-  { name: 'Posture Guard', url: 'https://notion.so',icon: '/projects/postureguard-icon.png'},
+  { name: 'Posture Guard', url: 'https://github.com/marilynjov/posture-guard/releases',icon: '/projects/postureguard-icon.png'},
   { name: { en: 'Thesis', es: 'Tesis' }, url: 'https://arc.net/l/quote/vhzdhzom', icon: '/projects/tesis.png' },
 ]
 
