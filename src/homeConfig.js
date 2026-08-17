@@ -17,8 +17,8 @@
 
 export const HOME_ITEMS = [
   // — widgets (big image tiles) —
-  { widget: true, name: 'Procreate', image: '/projects/widget-3.jpg',  w: 2, h: 2 },
-  { widget: true, name: 'Indigo', image: '/projects/indigo.png', w: 2, h: 1 },
+  { widget: true, name: 'Procreate', image: '/projects/widget-3.jpg',  w: 2, h: 2, zoom: 1.2 },
+  { widget: true, name: 'Procreate', image: '/projects/widget-4.PNG', w: 2, h: 1 },
   { widget: true, name: 'Procreate', image: '/projects/widget-1.jpg', w: 3, h: 2 },
 
   // — apps (small icons) — `name` may be a string or { en, es } (see i18n pick()).

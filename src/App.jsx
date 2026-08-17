@@ -87,7 +87,7 @@ function Tile({ item, lang }) {
 
   const media = isWidget
     ? item.image
-      ? <img className="home__media" src={item.image} alt={name || ''} />
+      ? <img className="home__media" src={item.image} alt={name || ''} style={item.zoom ? { transform: `scale(${item.zoom})` } : undefined} />
       : <div className="home__placeholder" style={{ background: colorFor(name) }}>{name}</div>
     : item.icon
       ? <img className="home__media" src={item.icon} alt="" />
@@ -100,9 +100,13 @@ function Tile({ item, lang }) {
     </>
   )
 
+  // Where a click goes: an explicit url, else (for image widgets) the full image
+  // itself — so clicking a widget opens the whole picture in a new tab.
+  const href = item.url || (isWidget && item.image) || undefined
+
   const cls = isWidget ? 'home__tile home__tile--widget' : 'home__tile home__tile--app'
-  return item.url ? (
-    <a className={cls} style={style} href={item.url} target="_blank" rel="noreferrer">
+  return href ? (
+    <a className={cls} style={style} href={href} target="_blank" rel="noreferrer">
       {inner}
     </a>
   ) : (
@@ -250,9 +254,6 @@ function ExperienceFrames({ lang }) {
               ›
             </button>
           )}
-          <button className="exp__close" onClick={() => setSelected(null)}>
-            ✕
-          </button>
         </div>
       )}
     </div>

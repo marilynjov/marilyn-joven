@@ -1,4 +1,4 @@
-import { Suspense, useMemo, useRef, useState } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { useFrame } from '@react-three/fiber'
 import { Text, useTexture } from '@react-three/drei'
@@ -150,7 +150,23 @@ function WallLink({ label, url, position, size = 0.18 }) {
 
 // One flat orange face. `onFace` (optional) makes it clickable to turn to it.
 // Transparent so it can fade in — its opacity is driven each frame by the room.
-function Wall({ position, rotation, size, color, onFace }) {
+// Wall textures — one per shade, baked from texture.png. Loaded once, cached by URL.
+const _texCache = {}
+function loadWallTex(url, cb) {
+  if (_texCache[url]) return cb(_texCache[url])
+  new THREE.TextureLoader().load(url, (t) => {
+    t.colorSpace = THREE.SRGBColorSpace
+    _texCache[url] = t
+    cb(t)
+  })
+}
+
+function Wall({ position, rotation, size, texUrl, fallback, onFace }) {
+  // The whole image IS the wall (no tiling, no tint — the shade is baked into each
+  // variant). Show the flat shade until the texture has loaded.
+  const [tex, setTex] = useState(_texCache[texUrl])
+  useEffect(() => loadWallTex(texUrl, setTex), [texUrl])
+
   return (
     <mesh
       position={position}
@@ -160,7 +176,14 @@ function Wall({ position, rotation, size, color, onFace }) {
       onPointerOut={onFace ? setCursor('auto') : undefined}
     >
       <planeGeometry args={size} />
-      <meshBasicMaterial color={color} side={THREE.DoubleSide} transparent opacity={0} toneMapped={false} />
+      <meshBasicMaterial
+        map={tex || null}
+        color={tex ? '#ffffff' : fallback}
+        side={THREE.DoubleSide}
+        transparent
+        opacity={0}
+        toneMapped={false}
+      />
     </mesh>
   )
 }
@@ -204,33 +227,38 @@ export function AboutRoom({ nav, goWall, lang = 'en' }) {
         <Wall
           position={[cx, cy, ROOM_BACK_Z]}
           size={[W * 2, H * 2]}
-          color={ROOM_COLORS.back}
+          texUrl="/about/wall-back.webp"
+          fallback={ROOM_COLORS.back}
           onFace={() => goWall('back')}
         />
         <Wall
           position={[cx, cy + H, ROOM_MID_Z]}
           rotation={[Math.PI / 2, 0, 0]}
           size={[W * 2, DEPTH]}
-          color={ROOM_COLORS.ceiling}
+          texUrl="/about/wall-ceiling.webp"
+          fallback={ROOM_COLORS.ceiling}
         />
         <Wall
           position={[cx, cy - H, ROOM_MID_Z]}
           rotation={[-Math.PI / 2, 0, 0]}
           size={[W * 2, DEPTH]}
-          color={ROOM_COLORS.floor}
+          texUrl="/about/wall-floor.webp"
+          fallback={ROOM_COLORS.floor}
         />
         <Wall
           position={[cx - W, cy, ROOM_MID_Z]}
           rotation={[0, Math.PI / 2, 0]}
           size={[DEPTH, H * 2]}
-          color={ROOM_COLORS.left}
+          texUrl="/about/wall-left.webp"
+          fallback={ROOM_COLORS.left}
           onFace={() => goWall('left')}
         />
         <Wall
           position={[cx + W, cy, ROOM_MID_Z]}
           rotation={[0, -Math.PI / 2, 0]}
           size={[DEPTH, H * 2]}
-          color={ROOM_COLORS.right}
+          texUrl="/about/wall-right.webp"
+          fallback={ROOM_COLORS.right}
           onFace={() => goWall('right')}
         />
       </group>
@@ -284,13 +312,13 @@ export function AboutRoom({ nav, goWall, lang = 'en' }) {
                   {l}
                 </Text>
               ))}
-              <Text position={[0, -H * 0.24, 0]} {...head(0.13)} fillOpacity={0.85}>
+              <Text position={[0, -H * 0.3, 0]} {...head(0.13)} fillOpacity={0.85}>
                 {left.languagesHeading.toUpperCase()}
               </Text>
               {left.languages.map((l, i) => (
                 <Text
                   key={`lang${i}`}
-                  position={[0, -H * 0.38 - i * 0.17, 0]}
+                  position={[0, -H * 0.44 - i * 0.17, 0]}
                   {...body(0.11)}
                   fillOpacity={0.8}
                 >

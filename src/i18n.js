@@ -10,7 +10,7 @@ export const UI = {
   en: {
     role: 'Creative Engineer',
     scroll: 'scroll to enter',
-    back: '← Back',
+    back: '←',
     center: '⌂ Center',
     other: 'Español', // label on the toggle → the language you'd switch TO
     cv: '/cv/cv-en.pdf', // served file
@@ -20,7 +20,7 @@ export const UI = {
   es: {
     role: 'Ingeniera Creativa',
     scroll: 'desliza para entrar',
-    back: '← Volver',
+    back: '←',
     center: '⌂ Centro',
     other: 'English',
     cv: '/cv/cv-es.pdf',
