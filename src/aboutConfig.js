@@ -12,31 +12,32 @@ export const ABOUT_WALLS = {
       heading: 'About',
       subtitle: 'MSc in Systems and Computer Engineering',
       body:
-        "I'm a creative engineer who builds at the seam between design and code — " +
-        'turning abstract data and ideas into things people can see, touch, and move through.',
+        "I'm a full-stack developer and visual-analytics researcher focused on decision-making — " +
+        'with experience in process automation, data visualization, and building solutions that ' +
+        'make an impact across diverse technological environments.',
       links: [
         { label: 'GitHub', url: 'https://github.com/marilynjov' },
         { label: 'LinkedIn', url: 'https://www.linkedin.com/in/marilyn-stephany-joven' },
-        { label: 'CV (PDF)', url: '/resume.pdf' },
+        { label: 'CV (PDF)', url: '/cv/cv-en.pdf' },
       ],
     },
     left: {
       heading: 'What I bring',
-      lines: ['Creative technology', 'Data visualization', 'Interactive systems'],
+      lines: ['Full-stack development', 'Visual analytics', 'Process automation', 'Data visualization', 'Interactive Systems'],
       languagesHeading: 'Languages',
       languages: [
         'Spanish — Native',
         'English — Advanced',
+        'Portuguese — Basic',
         'French — Basic',
         'German — Basic',
-        'Portuguese — Basic',
       ],
     },
     right: {
       heading: 'This site',
       body:
         'More than a portfolio, this is a little window into who I am. Beyond the code I ' +
-        'paint, take photographs, and draw on my iPad — and, above all, I love to program. ' +
+        'paint, take photos, draw on my iPad, and create things — and, above all, I love to program. ' +
         'Every section here is a piece of that.',
     },
   },
@@ -45,31 +46,32 @@ export const ABOUT_WALLS = {
       heading: 'Sobre mí',
       subtitle: 'Maestría en Ingeniería de Sistemas y Computación',
       body:
-        'Soy una ingeniera creativa que construye en la costura entre el diseño y el código — ' +
-        'convirtiendo datos e ideas abstractas en cosas que la gente puede ver, tocar y recorrer.',
+        'Soy desarrolladora full-stack e investigadora en visual analytics aplicada a la toma de ' +
+        'decisiones — con experiencia en automatización de procesos, visualización de datos y el ' +
+        'desarrollo de soluciones con impacto en entornos tecnológicos diversos.',
       links: [
         { label: 'GitHub', url: 'https://github.com/marilynjov' },
         { label: 'LinkedIn', url: 'https://www.linkedin.com/in/marilyn-stephany-joven' },
-        { label: 'CV (PDF)', url: '/resume.pdf' },
+        { label: 'CV (PDF)', url: '/cv/cv-es.pdf' },
       ],
     },
     left: {
       heading: 'Lo que aporto',
-      lines: ['Tecnología creativa', 'Visualización de datos', 'Sistemas interactivos'],
+      lines: ['Desarrollo full-stack', 'Visual analytics', 'Automatización de procesos', 'Visualización de datos', 'Sistemas interactivos'],
       languagesHeading: 'Idiomas',
       languages: [
         'Español — Nativo',
         'Inglés — Avanzado',
+        'Portugués — Básico',
         'Francés — Básico',
         'Alemán — Básico',
-        'Portugués — Básico',
       ],
     },
     right: {
       heading: 'Esta página',
       body:
         'Más que un portafolio, esta es una pequeña parte de quién soy. Más allá del código ' +
-        'me gusta pintar, tomar fotos y dibujar en mi iPad — y, sobre todo, me encanta programar. ' +
+        'me gusta pintar, tomar fotos, dibujar en mi iPad y crear cosas — y, sobre todo, me encanta programar. ' +
         'Cada sección aquí es una parte de eso.',
     },
   },

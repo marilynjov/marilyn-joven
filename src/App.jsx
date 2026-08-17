@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Scene } from './three/Scene'
 import { useScrollProgress } from './three/useScrollProgress'
-import { CAMERA_START_Z, CAMERA_FOV } from './three/config'
+import { CAMERA_START_Z, CAMERA_FOV, ABOUT_END_X, ABOUT_END_Y } from './three/config'
 import { HOME_ITEMS, DOCK } from './homeConfig'
 import { EXP_PHOTOS, EXP_ZOOM, EXP_FILL, EXP_DARKEN, DEBUG_HITBOXES } from './experienceConfig'
 import { SKILLS, SKILL_ROWS, bwSrc, colorSrc } from './skillsConfig'
@@ -87,7 +87,7 @@ function Tile({ item, lang }) {
 
   const media = isWidget
     ? item.image
-      ? <img className="home__media" src={item.image} alt={name || ''} />
+      ? <img className="home__media" src={item.image} alt={name || ''} style={item.zoom ? { transform: `scale(${item.zoom})` } : undefined} />
       : <div className="home__placeholder" style={{ background: colorFor(name) }}>{name}</div>
     : item.icon
       ? <img className="home__media" src={item.icon} alt="" />
@@ -100,9 +100,13 @@ function Tile({ item, lang }) {
     </>
   )
 
+  // Where a click goes: an explicit url, else (for image widgets) the full image
+  // itself — so clicking a widget opens the whole picture in a new tab.
+  const href = item.url || (isWidget && item.image) || undefined
+
   const cls = isWidget ? 'home__tile home__tile--widget' : 'home__tile home__tile--app'
-  return item.url ? (
-    <a className={cls} style={style} href={item.url} target="_blank" rel="noreferrer">
+  return href ? (
+    <a className={cls} style={style} href={href} target="_blank" rel="noreferrer">
       {inner}
     </a>
   ) : (
@@ -218,16 +222,38 @@ function ExperienceFrames({ lang }) {
       {/* Zoomed into the frame: a soft darken in the corner, then the year is
           burned in like a disposable-camera date stamp with the role beneath. */}
       {active && (
-        <div className="exp__detail" onClick={() => setSelected(null)}>
-          <div className="exp__grade" style={{ '--exp-dark': EXP_DARKEN }} />
-          <figure className="exp__stamp" onClick={(e) => e.stopPropagation()}>
-            <span className="exp__date">{active.year}</span>
-            <span className="exp__role">{pick(active.role, lang)}</span>
-            {active.note && <span className="exp__note">{pick(active.note, lang)}</span>}
-          </figure>
-          <button className="exp__close" onClick={() => setSelected(null)}>
-            ✕
-          </button>
+        <div className="exp__detail" style={{ '--exp-dark': EXP_DARKEN }} onClick={() => setSelected(null)}>
+          {/* Uniform darken over the WHOLE viewport, so the neighbouring frames that
+              peek in at wide aspect ratios read as dark as the focused one. */}
+          <div className="exp__dim" />
+          {/* Stamp tracks the IMAGE box (same aspect-lock as .exp__stage), so the
+              caption stays on the photo even when the frame is letterboxed. */}
+          <div className="exp__imgbox">
+            <figure className="exp__stamp" onClick={(e) => e.stopPropagation()}>
+              <span className="exp__date">{active.year}</span>
+              <span className="exp__role">{pick(active.role, lang)}</span>
+              {active.note && <span className="exp__note">{pick(active.note, lang)}</span>}
+            </figure>
+          </div>
+          {/* Step to the neighbouring photo (the zoom pans over to it). */}
+          {selected > 0 && (
+            <button
+              className="exp__nav exp__nav--prev"
+              onClick={(e) => (e.stopPropagation(), setSelected(selected - 1))}
+              aria-label="Previous"
+            >
+              ‹
+            </button>
+          )}
+          {selected < EXP_PHOTOS.length - 1 && (
+            <button
+              className="exp__nav exp__nav--next"
+              onClick={(e) => (e.stopPropagation(), setSelected(selected + 1))}
+              aria-label="Next"
+            >
+              ›
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -592,7 +618,7 @@ function AboutHud({ nav, activeWall, goWall, onClose, lang }) {
 function App() {
   // Shared section-view state (mutated imperatively, read every frame). `cx/cy`
   // are the clicked block's world position; `color` tints the zoom-in fill.
-  const nav = useRef({ target: 0, current: 0, cx: 0, cy: 0, color: null, wall: 'back' })
+  const nav = useRef({ target: 0, current: 0, cx: 0, cy: 0, endX: ABOUT_END_X, endY: ABOUT_END_Y, color: null, wall: 'back' })
   const progress = useScrollProgress(nav)
   const [activeKey, setActiveKey] = useState(null)
   const [lang, setLang] = useState('en') // 'en' | 'es' — flipped by the corner toggle
@@ -603,10 +629,13 @@ function App() {
     setActiveWall(wall)
   }
 
-  const onSelect = (key, world, color) => {
+  const onSelect = (key, world, color, end) => {
     if (!SECTIONS.has(key)) return
     nav.current.cx = world.x
     nav.current.cy = world.y
+    // Per-label resting offset (falls back to the global default).
+    nav.current.endX = end ? end[0] : ABOUT_END_X
+    nav.current.endY = end ? end[1] : ABOUT_END_Y
     nav.current.color = color
     nav.current.target = 1
     nav.current.wall = 'back'
@@ -657,15 +686,32 @@ function App() {
 
       <ScrollHint progress={progress} lang={lang} />
 
-      {/* Language toggle — always available, top-right. Shows the language you'd
-          switch TO. */}
-      <button
-        className="langtoggle"
-        onClick={() => setLang((l) => (l === 'en' ? 'es' : 'en'))}
-        aria-label={`Switch language to ${UI[lang].other}`}
-      >
-        {UI[lang].other}
-      </button>
+      {/* Top-right controls — always available (so they're there over About and
+          Projects too): download the current-language CV, and toggle the language. */}
+      <div className="topright">
+        <a
+          className="cvdownload"
+          href={UI[lang].cv}
+          download={UI[lang].cvName}
+          aria-label={UI[lang].cvLabel}
+          title={UI[lang].cvLabel}
+        >
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M12 3v11" />
+            <path d="M7 10l5 5 5-5" />
+            <path d="M4 21h16" />
+          </svg>
+          <span>CV</span>
+        </a>
+        <div className="langtoggle" role="group" aria-label="Language">
+          <button type="button" className={lang === 'en' ? 'is-active' : ''} aria-pressed={lang === 'en'} onClick={() => setLang('en')}>
+            EN
+          </button>
+          <button type="button" className={lang === 'es' ? 'is-active' : ''} aria-pressed={lang === 'es'} onClick={() => setLang('es')}>
+            ES
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

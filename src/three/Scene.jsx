@@ -17,8 +17,6 @@ import {
   ABOUT_CAM_Z,
   ABOUT_BG_Z,
   ABOUT_COLOR,
-  ABOUT_END_X,
-  ABOUT_END_Y,
   ROOM_HALF_W,
   ROOM_BACK_Z,
   ROOM_MID_Z,
@@ -45,8 +43,8 @@ const _lookTarget = new THREE.Vector3() // scratch vector for AboutFill's cover 
 // 'back' matches the old fly-in landing; 'left'/'right' rest in front of a side
 // wall, looking straight at it. Uses the clicked block's world xy as room centre.
 function wallPose(n, outPos, outLook) {
-  const cx = n.cx + ABOUT_END_X
-  const cy = n.cy + ABOUT_END_Y
+  const cx = n.cx + n.endX
+  const cy = n.cy + n.endY
   if (n.wall === 'left') {
     const wx = cx - ROOM_HALF_W
     outPos.set(wx + WALL_VIEW_DIST, cy, ROOM_MID_Z)
@@ -173,7 +171,7 @@ export function Scene({ progress, nav, onSelect, activeKey, goWall, lang }) {
       <AboutFill nav={nav} about={inAbout} />
       <Suspense fallback={<LoadingFallback />}>
         <Layers />
-        <Menu3D progress={progress} nav={nav} onSelect={onSelect} aboutActive={inAbout} lang={lang} />
+        <Menu3D progress={progress} nav={nav} onSelect={onSelect} aboutActive={inAbout} lang={lang} activeKey={activeKey} />
         {inAbout && <AboutRoom nav={nav} goWall={goWall} lang={lang} />}
       </Suspense>
     </>

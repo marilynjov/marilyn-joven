@@ -39,12 +39,15 @@ const ANIM = 0.12 // easing per frame for the layout transition (0..1)
 // `hit` = block bounding-box size (w, h) as image fractions → the clickable area.
 // `nudge` [x, y] shifts the whole item on WIDE screens only (viewport fractions).
 // `color` = the block's own colour (sampled), used to tint the zoom-in fill.
+// `end` [x, y] = where THIS label's zoom comes to rest, as a world-unit offset from
+//   the block's centre. +x moves the camera right (content sits left), +y moves it
+//   up. This is the per-label version of ABOUT_END_X/Y — tune each independently.
 const ITEMS = [
   // `label` (the coloured block) is shared; `word` (the title) has an es variant.
-  { key: 'about', label: '/home/abt.webp', word: { en: '/home/about.webp', es: '/home/about_esp.webp' }, anchor: [0.484, 0.602], wordAnchor: { en: [0.47, 0.582], es: [0.47, 0.575] }, hit: [0.24, 0.277], nudge: [0, 0], color: '#eb7c4e' },
-  { key: 'experience', label: '/home/exp.webp', word: { en: '/home/experience.webp', es: '/home/experience_esp.webp' }, anchor: [0.201, 0.428], wordAnchor: { en: [0.188, 0.442], es: [0.188, 0.442] }, hit: [0.273, 0.24], nudge: [0, 0], color: '#5aa9a0' },
-  { key: 'projects', label: '/home/proj.webp', word: { en: '/home/projects.webp', es: '/home/proyects_esp.webp' }, anchor: [0.819, 0.695], wordAnchor: { en: [0.843, 0.683], es: [0.843, 0.68] }, hit: [0.238, 0.243], nudge: [0, 0], color: '#f8df6a' },
-  { key: 'skills', label: '/home/skill.webp', word: { en: '/home/skills.webp', es: '/home/skill_esp.webp' }, anchor: [0.706, 0.302], wordAnchor: { en: [0.716, 0.329], es: [0.705, 0.329] }, hit: [0.251, 0.249], nudge: [0, 0], color: '#c94f4f' },
+  { key: 'about', label: '/home/abt.png', word: { en: '/home/about.png', es: '/home/about_esp.PNG' }, anchor: [0.484, 0.602], wordAnchor: { en: [0.47, 0.582], es: [0.47, 0.575] }, hit: [0.24, 0.277], nudge: [0, 0], end: [0.2, 0.13], color: '#eb7c4e' },
+  { key: 'experience', label: '/home/exp.png', word: { en: '/home/experience.png', es: '/home/experience_esp.PNG' }, anchor: [0.201, 0.428], wordAnchor: { en: [0.188, 0.442], es: [0.188, 0.442] }, hit: [0.273, 0.24], nudge: [0, 0], end: [0.2, 0.13], color: '#5aa9a0' },
+  { key: 'projects', label: '/home/proj.png', word: { en: '/home/projects.png', es: '/home/proyects_esp.PNG' }, anchor: [0.819, 0.695], wordAnchor: { en: [0.843, 0.683], es: [0.843, 0.68] }, hit: [0.238, 0.243], nudge: [0, 0], end: [0.2, 0.13], color: '#f8df6a' },
+  { key: 'skills', label: '/home/skill.png', word: { en: '/home/skills.png', es: '/home/skill_esp.PNG' }, anchor: [0.706, 0.302], wordAnchor: { en: [0.716, 0.329], es: [0.705, 0.329] }, hit: [0.251, 0.249], nudge: [0, 0], end: [0.2, 0.13], color: '#c94f4f' },
 ]
 
 // Every image the menu can show — both language variants of each title, so the
@@ -80,6 +83,7 @@ function CoverPlane({
   progress,
   nav,
   aboutActive,
+  sectionKeep = false,
   children,
 }) {
   const ref = useRef()
@@ -135,7 +139,12 @@ function CoverPlane({
     // Hold the magnified block until the very end, then fade it (0.9→0.98) to hand
     // off to the room. The block covers the screen with orange the whole way in, so
     // the room only appears once fully zoomed and there's no flat-orange fill.
-    const mf = aboutActive ? 1 - smoothstep(0.9, 0.98, nav.current.current) : 1
+    // On narrow screens the blocks are stacked at centre, so during a section zoom
+    // they'd all magnify into a mix of colours. Fade everything but the selected
+    // block out as the zoom begins, leaving just its colour (+ the fill) on screen.
+    const stackFade =
+      layout.stack && !sectionKeep ? 1 - smoothstep(0.12, 0.4, nav.current.current) : 1
+    const mf = (aboutActive ? 1 - smoothstep(0.9, 0.98, nav.current.current) : 1) * stackFade
     if (fade) {
       const o = smoothstep(0.72, 1, progress.current.current) * mf
       ref.current.material.opacity = o
@@ -161,14 +170,17 @@ function CoverPlane({
   )
 }
 
-function MenuItem({ item, labelTex, wordTex, layout, progress, nav, onSelect, dim, onHover, aboutActive, lang }) {
+function MenuItem({ item, labelTex, wordTex, layout, progress, nav, onSelect, dim, onHover, aboutActive, lang, activeKey }) {
   // Clicks/hover only count at the menu (scrolled in) and not mid-About.
   const active = () =>
     progress.current.current > 0.8 && nav.current.current < 0.3
 
+  const isSelected = item.key === activeKey
+
   return (
     <group>
-      {/* Label plane + an invisible hit-box sized to the painted block. */}
+      {/* Label plane + an invisible hit-box sized to the painted block. The selected
+          block stays through the zoom (its colour fills); the rest fade on mobile. */}
       <CoverPlane
         texture={labelTex}
         z={LABEL_Z}
@@ -180,6 +192,7 @@ function MenuItem({ item, labelTex, wordTex, layout, progress, nav, onSelect, di
         progress={progress}
         nav={nav}
         aboutActive={aboutActive}
+        sectionKeep={isSelected}
       >
         <mesh
           position={[
@@ -190,7 +203,7 @@ function MenuItem({ item, labelTex, wordTex, layout, progress, nav, onSelect, di
           onClick={(e) => {
             if (!active()) return
             e.stopPropagation()
-            onSelect(item.key, e.object.getWorldPosition(_world), item.color)
+            onSelect(item.key, e.object.getWorldPosition(_world), item.color, item.end)
           }}
           onPointerOver={(e) => {
             if (!active()) return
@@ -228,7 +241,7 @@ function MenuItem({ item, labelTex, wordTex, layout, progress, nav, onSelect, di
   )
 }
 
-export function Menu3D({ progress, nav, onSelect, onHoverChange, aboutActive, lang = 'en' }) {
+export function Menu3D({ progress, nav, onSelect, onHoverChange, aboutActive, lang = 'en', activeKey }) {
   const textures = useTexture(ALL_FILES)
   textures.forEach((t) => (t.colorSpace = THREE.SRGBColorSpace))
   // Look textures up by path so we can pick the block + the current-language title.
@@ -267,6 +280,7 @@ export function Menu3D({ progress, nav, onSelect, onHoverChange, aboutActive, la
             onHover={handleHover}
             aboutActive={aboutActive}
             lang={lang}
+            activeKey={activeKey}
           />
         )
       })}

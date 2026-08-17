@@ -13,14 +13,13 @@
 //     - `url` is optional (drop it for a non-clickable widget).
 //     - No `image` yet → a placeholder tile so the layout still works.
 //
-// Put images in  public/projects/  and reference them as  '/projects/<file>'.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const HOME_ITEMS = [
   // — widgets (big image tiles) —
-  { widget: true, name: 'Procreate', image: '/projects/widget-3.jpg', url: 'https://example.com', w: 2, h: 2 },
-  { widget: true, name: 'Indigo', image: '/projects/indigo.png', url: 'https://example.com', w: 2, h: 1 },
-  { widget: true, name: 'Procreate', image: '/projects/widget-1.jpg', url: 'https://example.com', w: 3, h: 2 },
+  { widget: true, name: 'Procreate', image: '/projects/widget-3.jpg',  w: 2, h: 2, zoom: 1.2 },
+  { widget: true, name: 'Procreate', image: '/projects/widget-4.PNG', w: 2, h: 1 },
+  { widget: true, name: 'Procreate', image: '/projects/widget-1.jpg', w: 3, h: 2 },
 
   // — apps (small icons) — `name` may be a string or { en, es } (see i18n pick()).
   { name: { en: 'Portfolio', es: 'Portafolio' }, url: 'https://marilyn-joven.vercel.app/', icon: '/projects/portfolio.png' },
