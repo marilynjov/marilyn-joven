@@ -2,6 +2,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { useFrame } from '@react-three/fiber'
 import { Text, useTexture } from '@react-three/drei'
+import { preloadFont } from 'troika-three-text'
 import {
   ROOM_HALF_W,
   ROOM_HALF_H,
@@ -23,6 +24,18 @@ const H = ROOM_HALF_H
 const PHOTO = ABOUT_PHOTO
 const DEPTH = ROOM_NEAR_Z - ROOM_BACK_Z // side-wall / floor / ceiling length along z
 const EPS = 0.05 // lift text a hair off the wall to avoid z-fighting
+
+// Warm the wall fonts once the page is idle (after the entry has loaded, so it
+// doesn't fight the layers for bandwidth). Troika then has the woff fetched, parsed,
+// and its glyphs pre-generated, so the About text appears instantly on first entry.
+const ROOM_CHARS =
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzÁÉÍÓÚÑáéíóúñ0123456789 —·.,()/:@'"
+const warmRoomFonts = () => {
+  preloadFont({ font: ROOM_FONT, characters: ROOM_CHARS }, () => {})
+  preloadFont({ font: ROOM_FONT_BOLD, characters: ROOM_CHARS }, () => {})
+}
+if (typeof requestIdleCallback === 'function') requestIdleCallback(warmRoomFonts)
+else setTimeout(warmRoomFonts, 1200)
 
 // A framed horizontal photo, rendered INSIDE a wall's group so it inherits that
 // wall's position/rotation. Local +z points into the room, so small +z offsets lift
@@ -116,21 +129,73 @@ const body = (size) => ({
   fontSize: size,
 })
 
-// A clickable link on a wall — bold, with a soft drop shadow (troika's outline blur
-// + offset) so it lifts off the orange. Grows and darkens its shadow on hover.
-function WallLink({ label, url, position, size = 0.18 }) {
+// The "CV / pdf" tile, drawn once to a canvas so it matches the square app icons.
+let _cvTex = null
+function getCvTex() {
+  if (_cvTex) return _cvTex
+  const S = 256
+  const c = document.createElement('canvas')
+  c.width = c.height = S
+  const ctx = c.getContext('2d')
+  ctx.fillStyle = '#241812'
+  ctx.beginPath()
+  ctx.roundRect(0, 0, S, S, S * 0.22)
+  ctx.fill()
+  ctx.fillStyle = '#fff7f0'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.font = `700 ${Math.round(S * 0.42)}px "Helvetica Neue", Helvetica, Arial, sans-serif`
+  ctx.fillText('CV', S / 2, S * 0.44)
+  ctx.font = `600 ${Math.round(S * 0.15)}px "Helvetica Neue", Helvetica, Arial, sans-serif`
+  ctx.fillText('pdf', S / 2, S * 0.7)
+  const t = new THREE.CanvasTexture(c)
+  t.colorSpace = THREE.SRGBColorSpace
+  _cvTex = t
+  return t
+}
+
+// Soft square drop-shadow, baked once to a canvas (unlit scene → no real shadows).
+let _iconShadow = null
+function getIconShadow() {
+  if (_iconShadow) return _iconShadow
+  const S = 128
+  const c = document.createElement('canvas')
+  c.width = c.height = S
+  const ctx = c.getContext('2d')
+  ctx.shadowColor = 'rgba(0,0,0,1)'
+  ctx.shadowBlur = S * 0.09
+  ctx.shadowOffsetX = S // draw the shape off-canvas so only its blurred shadow lands
+  ctx.fillStyle = '#000'
+  const pad = S * 0.15
+  ctx.beginPath()
+  ctx.roundRect(pad - S, pad, S - 2 * pad, S - 2 * pad, (S - 2 * pad) * 0.22)
+  ctx.fill()
+  const t = new THREE.CanvasTexture(c)
+  _iconShadow = t
+  return t
+}
+
+// A square icon button on a wall — a projects-style app icon (GitHub / LinkedIn) or
+// the generated CV tile. Small drop shadow, clickable, grows on hover.
+function WallIcon({ tex: given, texUrl, url, position, size = 0.55 }) {
+  const [loaded, setLoaded] = useState(texUrl ? _texCache[texUrl] : null)
+  useEffect(() => {
+    if (texUrl) loadWallTex(texUrl, setLoaded)
+  }, [texUrl])
+  const tex = given || loaded
   const [hover, setHover] = useState(false)
+  // Mount only once the texture is ready — otherwise the material compiles without a
+  // map slot and the late-arriving image never shows (blank/white square).
+  if (!tex) return null
   return (
-    <group position={position} scale={hover ? 1.08 : 1}>
-      <Text
-        {...body(size)}
-        font={ROOM_FONT_BOLD}
-        outlineColor="#2a0f04"
-        outlineOpacity={hover ? 0.9 : 0.6}
-        outlineWidth="2%"
-        outlineBlur="20%"
-        outlineOffsetX="7%"
-        outlineOffsetY="7%"
+    <group position={position} scale={hover ? 1.12 : 1}>
+      {/* small soft shadow, nudged down-right, behind the icon */}
+      <mesh position={[0.04, -0.05, -0.01]} renderOrder={1}>
+        <planeGeometry args={[size * 1.28, size * 1.28]} />
+        <meshBasicMaterial map={getIconShadow()} transparent opacity={0.4} depthTest={false} depthWrite={false} toneMapped={false} />
+      </mesh>
+      <mesh
+        renderOrder={2}
         onClick={(e) => (e.stopPropagation(), window.open(url, '_blank'))}
         onPointerOver={(e) => {
           e.stopPropagation()
@@ -142,8 +207,9 @@ function WallLink({ label, url, position, size = 0.18 }) {
           document.body.style.cursor = 'auto'
         }}
       >
-        {label}
-      </Text>
+        <planeGeometry args={[size, size]} />
+        <meshBasicMaterial map={tex} transparent depthWrite={false} toneMapped={false} />
+      </mesh>
     </group>
   )
 }
@@ -288,15 +354,6 @@ export function AboutRoom({ nav, goWall, lang = 'en' }) {
                 {back.subtitle.toUpperCase()}
               </Text>
             )}
-            {back.links.map((link, i) => (
-              <WallLink
-                key={i}
-                label={link.label}
-                url={link.url}
-                position={[(i - (back.links.length - 1) / 2) * 1.25, -H * 0.6, 0]}
-                size={0.18}
-              />
-            ))}
             {PHOTO.src && PHOTO.wall === 'back' && <WallFrame photo={PHOTO} />}
           </group>
 
@@ -329,13 +386,13 @@ export function AboutRoom({ nav, goWall, lang = 'en' }) {
             {PHOTO.src && PHOTO.wall === 'left' && <WallFrame photo={PHOTO} />}
           </group>
 
-          {/* ── Right wall (faces -x): what this site is ── */}
+          {/* ── Right wall (faces -x): what this site is, + the contact/CV icons ── */}
           <group position={[cx + W - EPS, cy, ROOM_MID_Z]} rotation={[0, -Math.PI / 2, 0]}>
-            <Text position={[0, H * 0.5, 0]} {...head(0.28)}>
+            <Text position={[0, H * 0.55, 0]} {...head(0.28)}>
               {right.heading.toUpperCase()}
             </Text>
             <Text
-              position={[0, -H * 0.02, 0]}
+              position={[0, H * 0.12, 0]}
               {...body(0.165)}
               maxWidth={W * 1.5}
               textAlign="center"
@@ -343,6 +400,17 @@ export function AboutRoom({ nav, goWall, lang = 'en' }) {
             >
               {right.body}
             </Text>
+            {/* GitHub / LinkedIn / CV — the links live under back.links in the config. */}
+            {back.links.map((link, i) => (
+              <WallIcon
+                key={i}
+                url={link.url}
+                tex={link.icon === 'cv' ? getCvTex() : undefined}
+                texUrl={link.icon === 'cv' ? undefined : link.icon}
+                position={[(i - (back.links.length - 1) / 2) * 0.85, -H * 0.62, 0]}
+                size={0.55}
+              />
+            ))}
             {PHOTO.src && PHOTO.wall === 'right' && <WallFrame photo={PHOTO} />}
           </group>
         </group>

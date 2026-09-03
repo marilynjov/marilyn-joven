@@ -16,9 +16,9 @@ export const ABOUT_WALLS = {
         'with experience in process automation, data visualization, and building solutions that ' +
         'make an impact across diverse technological environments.',
       links: [
-        { label: 'GitHub', url: 'https://github.com/marilynjov' },
-        { label: 'LinkedIn', url: 'https://www.linkedin.com/in/marilyn-stephany-joven' },
-        { label: 'CV (PDF)', url: '/cv/cv-en.pdf' },
+        { label: 'GitHub', icon: '/projects/github-icon.png', url: 'https://github.com/marilynjov' },
+        { label: 'LinkedIn', icon: '/projects/linkedin-icon.png', url: 'https://www.linkedin.com/in/marilyn-stephany-joven' },
+        { label: 'CV', icon: 'cv', url: '/cv/cv-en.pdf' },
       ],
     },
     left: {
@@ -50,9 +50,9 @@ export const ABOUT_WALLS = {
         'decisiones — con experiencia en automatización de procesos, visualización de datos y el ' +
         'desarrollo de soluciones con impacto en entornos tecnológicos diversos.',
       links: [
-        { label: 'GitHub', url: 'https://github.com/marilynjov' },
-        { label: 'LinkedIn', url: 'https://www.linkedin.com/in/marilyn-stephany-joven' },
-        { label: 'CV (PDF)', url: '/cv/cv-es.pdf' },
+        { label: 'GitHub', icon: '/projects/github-icon.png', url: 'https://github.com/marilynjov' },
+        { label: 'LinkedIn', icon: '/projects/linkedin-icon.png', url: 'https://www.linkedin.com/in/marilyn-stephany-joven' },
+        { label: 'CV', icon: 'cv', url: '/cv/cv-es.pdf' },
       ],
     },
     left: {
