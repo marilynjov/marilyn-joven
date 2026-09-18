@@ -874,3 +874,44 @@
     display: none;
   }
 }
+
+/* Phones: the About arrows would sit on top of the wall text at mid-height, so they
+   drop into a bottom bar either side of the Center pill. */
+@media (max-width: 720px) {
+  .abouthud__arrow {
+    top: auto;
+    bottom: clamp(1rem, 4vh, 2rem);
+    transform: none;
+  }
+  .abouthud__arrow--left:hover {
+    transform: translateX(-2px);
+  }
+  .abouthud__arrow--right:hover {
+    transform: translateX(2px);
+  }
+  .abouthud__center {
+    bottom: calc(clamp(1rem, 4vh, 2rem) + (2.6rem - 2.2rem) / 2);
+  }
+}
+
+/* Phones: the letterboxed film frame is only a strip across the middle, so the
+   date stamp would spill off the photo onto the film. Pin it to the bottom of the
+   screen instead, full width, clear of the prev/next arrows. */
+@media (max-width: 720px) {
+  .exp__imgbox {
+    width: 100vw;
+    height: 100%;
+    transform: translate(-50%, -50%);
+  }
+  .exp__stamp {
+    left: 1.25rem;
+    right: 1.25rem;
+    bottom: max(2rem, 8vh);
+  }
+  .exp__role {
+    letter-spacing: 0.14em;
+  }
+  .exp__note {
+    max-width: none;
+  }
+}

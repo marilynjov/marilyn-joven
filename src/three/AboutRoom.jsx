@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import { Text, useTexture } from '@react-three/drei'
 import { preloadFont } from 'troika-three-text'
 import {
@@ -9,6 +9,9 @@ import {
   ROOM_BACK_Z,
   ROOM_NEAR_Z,
   ROOM_MID_Z,
+  ABOUT_CAM_Z,
+  WALL_VIEW_DIST,
+  CAMERA_FOV,
 } from './config'
 import {
   ABOUT_WALLS,
@@ -20,11 +23,26 @@ import {
 } from '../aboutConfig'
 
 const W = ROOM_HALF_W
-const H = ROOM_HALF_H
 const PHOTO = ABOUT_PHOTO
 const DEPTH = ROOM_NEAR_Z - ROOM_BACK_Z // side-wall / floor / ceiling length along z
 const EPS = 0.05 // lift text a hair off the wall to avoid z-fighting
 
+// ── Portrait (phone) layout ──────────────────────────────────────────────────
+// The room is framed for a wide screen; on a tall one the camera only sees a
+// narrow slice of each wall. So below this aspect the room gets taller and each
+// wall's content reflows into a single column sized to what the camera sees.
+const COMPACT_ASPECT = 0.8 // width / height below which the portrait layout kicks in
+const COMPACT_HALF_H = 2.4 // taller room in portrait, so the walls fill the screen
+const BACK_COL = 2.2 // column width (world units) on the back wall
+const SIDE_COL = 1.45 // column width on the side walls
+const HALF_FOV_TAN = Math.tan((CAMERA_FOV * Math.PI) / 180 / 2)
+const BACK_DIST = ABOUT_CAM_Z - ROOM_BACK_Z // camera → back wall when facing it
+
+// Height of a troika Text block once laid out (0 until its first sync).
+const blockHeight = (mesh) => {
+  const b = mesh?.textRenderInfo?.blockBounds
+  return b ? b[3] - b[1] : 0
+}
 // Warm the wall fonts once the page is idle (after the entry has loaded, so it
 // doesn't fight the layers for bandwidth). Troika then has the woff fetched, parsed,
 // and its glyphs pre-generated, so the About text appears instantly on first entry.
@@ -263,6 +281,18 @@ export function AboutRoom({ nav, goWall, lang = 'en' }) {
   const wallsRef = useRef()
   const [showText, setShowText] = useState(false)
 
+  // Portrait layout: how wide a slice of each wall the camera sees, and a scale
+  // that shrinks a column only if it still wouldn't fit (very narrow phones).
+  const size = useThree((state) => state.size)
+  const aspect = size.width / size.height
+  const compact = aspect < COMPACT_ASPECT
+  const H = compact ? COMPACT_HALF_H : ROOM_HALF_H
+  const backFit = Math.min(1, (2 * BACK_DIST * HALF_FOV_TAN * aspect * 0.9) / BACK_COL)
+  const sideFit = Math.min(1, (2 * WALL_VIEW_DIST * HALF_FOV_TAN * aspect * 0.9) / SIDE_COL)
+  // Measured paragraph heights, so what follows a paragraph sits right under it.
+  const [backBodyH, setBackBodyH] = useState(0)
+  const [rightBodyH, setRightBodyH] = useState(0)
+
   useFrame(() => {
     const nv = nav.current.current
     // Room resolves only at the very end. Walls are readied just before the block
@@ -332,7 +362,95 @@ export function AboutRoom({ nav, goWall, lang = 'en' }) {
       {/* Text preloads its font via React.suspend — keep it in its OWN Suspense so
           that never blanks the menu/walls in the shared boundary. */}
       <Suspense fallback={null}>
-        {showText && (
+        {showText && compact && (
+        <group>
+          {/* ── Portrait: each wall is one centred column (see COMPACT_* above) ── */}
+          <group position={[cx, cy, ROOM_BACK_Z + EPS]} scale={backFit}>
+            <Text position={[0, 1.35, 0]} {...head(0.34)}>
+              {back.heading.toUpperCase()}
+            </Text>
+            <Text
+              position={[0, 0.95, 0]}
+              {...body(0.135)}
+              anchorY="top"
+              maxWidth={BACK_COL}
+              textAlign="center"
+              lineHeight={1.45}
+              onSync={(m) => setBackBodyH(blockHeight(m))}
+            >
+              {back.body}
+            </Text>
+            {back.subtitle && (
+              <Text
+                position={[0, 0.95 - backBodyH - 0.25, 0]}
+                {...head(0.095)}
+                anchorY="top"
+                maxWidth={BACK_COL}
+                textAlign="center"
+                lineHeight={1.5}
+                letterSpacing={0.12}
+                fillOpacity={0.55}
+              >
+                {back.subtitle.toUpperCase()}
+              </Text>
+            )}
+            {PHOTO.src && PHOTO.wall === 'back' && <WallFrame photo={PHOTO} />}
+          </group>
+
+          {/* Left wall: photo on top, strengths + languages stacked beneath it. */}
+          <group position={[cx - W + EPS, cy, ROOM_MID_Z]} rotation={[0, Math.PI / 2, 0]} scale={sideFit}>
+            {PHOTO.src && PHOTO.wall === 'left' && (
+              <WallFrame photo={{ ...PHOTO, width: 1.2, x: 0, y: 1.1 }} />
+            )}
+            <Text position={[0, 0.38, 0]} {...head(0.14)}>
+              {left.heading.toUpperCase()}
+            </Text>
+            {left.lines.map((l, i) => (
+              <Text key={i} position={[0, 0.18 - i * 0.15, 0]} {...body(0.1)}>
+                {l}
+              </Text>
+            ))}
+            <Text position={[0, -0.66, 0]} {...head(0.1)} fillOpacity={0.85}>
+              {left.languagesHeading.toUpperCase()}
+            </Text>
+            {left.languages.map((l, i) => (
+              <Text key={`lang${i}`} position={[0, -0.83 - i * 0.125, 0]} {...body(0.085)} fillOpacity={0.8}>
+                {l}
+              </Text>
+            ))}
+          </group>
+
+          {/* Right wall: heading, paragraph, then the icon row right under it. */}
+          <group position={[cx + W - EPS, cy, ROOM_MID_Z]} rotation={[0, -Math.PI / 2, 0]} scale={sideFit}>
+            <Text position={[0, 1.15, 0]} {...head(0.19)}>
+              {right.heading.toUpperCase()}
+            </Text>
+            <Text
+              position={[0, 0.88, 0]}
+              {...body(0.1)}
+              anchorY="top"
+              maxWidth={SIDE_COL}
+              textAlign="center"
+              lineHeight={1.45}
+              onSync={(m) => setRightBodyH(blockHeight(m))}
+            >
+              {right.body}
+            </Text>
+            {back.links.map((link, i) => (
+              <WallIcon
+                key={i}
+                url={link.url}
+                tex={link.icon === 'cv' ? getCvTex() : undefined}
+                texUrl={link.icon === 'cv' ? undefined : link.icon}
+                position={[(i - (back.links.length - 1) / 2) * 0.5, 0.88 - rightBodyH - 0.4, 0]}
+                size={0.36}
+              />
+            ))}
+            {PHOTO.src && PHOTO.wall === 'right' && <WallFrame photo={PHOTO} />}
+          </group>
+        </group>
+        )}
+        {showText && !compact && (
         <group>
           {/* ── Back wall: description + a row of clickable links ── */}
           <group position={[cx, cy, ROOM_BACK_Z + EPS]}>

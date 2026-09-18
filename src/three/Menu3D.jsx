@@ -110,7 +110,11 @@ function CoverPlane({
     const cover = liveCover + (refCover - liveCover) * a
 
     cur.current.s += (layout.scale - cur.current.s) * ANIM
-    const s = cover * cur.current.s
+    // On the mobile stack the selected block grows back to full size as it zooms,
+    // so on a tall screen it fills top-to-bottom instead of leaving black bands.
+    // Its anchor stays pinned to its slot (below), so the camera still lands on it.
+    const grow = layout.stack && sectionKeep ? a : 0
+    const s = cover * (cur.current.s + (1 - cur.current.s) * grow)
 
     // Desktop position: stay as painted + word→label alignment + manual nudge.
     // Computed with the CURRENT scale and applied instantly (no easing), so the
@@ -123,8 +127,13 @@ function CoverPlane({
     }
 
     // Mobile-column position: this plane's own anchor placed at its column slot.
-    const cx = layout.screen[0] * vp.width - (selfAnchor[0] - 0.5) * BG_WIDTH * s
-    const cy = layout.screen[1] * vp.height - (0.5 - selfAnchor[1]) * PLANE_HEIGHT * s
+    // The slot is a screen fraction, so it's measured against the SAME live→frozen
+    // viewport blend as the cover — otherwise, as the camera flies in, the shrinking
+    // live viewport pulls the block toward centre and the zoom misses it.
+    const colW = vp.width + (refW - vp.width) * a
+    const colH = vp.height + (refH - vp.height) * a
+    const cx = layout.screen[0] * colW - (selfAnchor[0] - 0.5) * BG_WIDTH * s
+    const cy = layout.screen[1] * colH - (0.5 - selfAnchor[1]) * PLANE_HEIGHT * s
 
     // Ease ONLY the wide↔mobile blend, so the layout switch animates while the
     // in-layout position tracks the zoom exactly.

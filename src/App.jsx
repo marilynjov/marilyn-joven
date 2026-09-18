@@ -185,7 +185,8 @@ function ExperienceFrames({ lang }) {
   })()
 
   return (
-    <div className="exp" onMouseMove={play}>
+    // Touch has no hover, so a tap (pointerdown) starts the animation too.
+    <div className="exp" onMouseMove={play} onPointerDown={play}>
       {/* Aspect-locked stage so the hotspots line up with the photos exactly. */}
       <div className="exp__stage">
         <div className="exp__zoom" style={zoomStyle}>
@@ -487,11 +488,68 @@ function SkillIcon({ skill }) {
   )
 }
 
+// On phones the desktop scatter crowds the edges, so each row's icons are re-laid
+// out as a centred grid (up to 3 per line), and the row labels are re-stacked to
+// match. Rows come from SKILL_ROWS: an icon belongs to the last label above it.
+// All values are % of the viewport height, like the desktop x/y.
+const SKILLS_PER_LINE = 3
+const PHONE_TOP = 12 // first row label
+const PHONE_BOTTOM = 94 // lowest the last line of icons may sit
+const PHONE_LABEL = 10 // label → centre of its first icon line
+const PHONE_LINE = 12 // icon line → next icon line
+const PHONE_ROW_GAP = 3 // extra space before the next row's label
+function phoneSkillLayout() {
+  const rows = SKILL_ROWS.map(() => [])
+  for (const s of SKILLS) {
+    let r = 0
+    SKILL_ROWS.forEach((row, i) => { if (row.y <= s.y) r = i })
+    rows[r].push(s)
+  }
+  const lineCounts = rows.map((items) => Math.ceil(items.length / SKILLS_PER_LINE))
+  const heights = lineCounts.map((n) => PHONE_LABEL + (n - 1) * PHONE_LINE + PHONE_ROW_GAP + 6)
+  const total = heights.reduce((a, b) => a + b, 0)
+  const k = Math.min(1, (PHONE_BOTTOM - PHONE_TOP) / total) // squeeze if it won't fit
+
+  const labelY = []
+  const skills = []
+  let y = PHONE_TOP
+  rows.forEach((items, r) => {
+    labelY.push(y)
+    items.forEach((s, i) => {
+      const line = Math.floor(i / SKILLS_PER_LINE)
+      const inLine = Math.min(SKILLS_PER_LINE, items.length - line * SKILLS_PER_LINE)
+      const col = i % SKILLS_PER_LINE
+      skills.push({
+        ...s,
+        x: 50 + (col - (inLine - 1) / 2) * 30,
+        y: y + (PHONE_LABEL + line * PHONE_LINE) * k,
+      })
+    })
+    y += heights[r] * k
+  })
+  return { skills, labelY }
+}
+
+// True while the viewport matches `query` (re-renders when that flips).
+function useMedia(query) {
+  const [match, setMatch] = useState(() => window.matchMedia(query).matches)
+  useEffect(() => {
+    const mq = window.matchMedia(query)
+    const on = () => setMatch(mq.matches)
+    mq.addEventListener('change', on)
+    return () => mq.removeEventListener('change', on)
+  }, [query])
+  return match
+}
+
 // ── Skills: tech icons scattered over the red zoom. Each one runs its own cursor
 // follower (see SkillIcon), so they react to the pointer individually. The icons
 // stay hidden through the zoom and pop in together once it lands (is-ready). ────
 function SkillsFloat({ nav, lang }) {
   const ref = useRef()
+  const phone = useMedia('(max-width: 720px)')
+  const phoneLayout = phone ? phoneSkillLayout() : null
+  const skills = phoneLayout ? phoneLayout.skills : SKILLS
   useEffect(() => {
     let raf
     const tick = () => {
@@ -509,12 +567,12 @@ function SkillsFloat({ nav, lang }) {
 
   return (
     <div className="skills" ref={ref}>
-      {SKILL_ROWS.map((r) => (
-        <p key={r.label.en} className="skills__rowlabel" style={{ top: `${r.y}%` }}>
+      {SKILL_ROWS.map((r, i) => (
+        <p key={r.label.en} className="skills__rowlabel" style={{ top: `${phoneLayout ? phoneLayout.labelY[i] : r.y}%` }}>
           {pick(r.label, lang)}
         </p>
       ))}
-      {SKILLS.map((s) => (
+      {skills.map((s) => (
         <SkillIcon key={s.slug} skill={s} />
       ))}
     </div>
