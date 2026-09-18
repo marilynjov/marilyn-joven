@@ -29,6 +29,7 @@ const WORD_Z = MENU_Z // ~3 units nearer than the labels (see config MENU_BG_Z)
 
 // ── Responsive stacking ──────────────────────────────────────────────────────
 const SMALL_BREAKPOINT = 768 // canvas width (px) below which we stack vertically
+const PORTRAIT_ASPECT = 0.8 // …or width/height below this (tall tablets, e.g. iPad portrait)
 const COL_HALF = 0.36 // half-height of the mobile column, as a screen fraction
 const SMALL_SCALE = 0.55 // shrink each item on mobile so the rows don't overlap
 const ANIM = 0.12 // easing per frame for the layout transition (0..1)
@@ -45,7 +46,7 @@ const ANIM = 0.12 // easing per frame for the layout transition (0..1)
 const ITEMS = [
   // `label` (the coloured block) is shared; `word` (the title) has an es variant.
   { key: 'about', label: '/home/abt.webp', word: { en: '/home/about.webp', es: '/home/about_esp.webp' }, anchor: [0.484, 0.602], wordAnchor: { en: [0.47, 0.582], es: [0.47, 0.575] }, hit: [0.24, 0.277], nudge: [0, 0], end: [0.2, 0.13], color: '#eb7c4e' },
-  { key: 'experience', label: '/home/exp.webp', word: { en: '/home/experience.webp', es: '/home/experience_esp.webp' }, anchor: [0.201, 0.428], wordAnchor: { en: [0.188, 0.442], es: [0.188, 0.442] }, hit: [0.273, 0.24], nudge: [0, 0], end: [0.2, 0.13], color: '#5aa9a0' },
+  { key: 'experience', label: '/home/exp.webp', word: { en: '/home/experience.webp', es: '/home/experience_esp.webp' }, anchor: [0.201, 0.428], wordAnchor: { en: [0.188, 0.442], es: [0.188, 0.442] }, hit: [0.273, 0.24], nudge: [0, 0], end: [0.2, 0.13], color: '#9bccba' },
   { key: 'projects', label: '/home/proj.webp', word: { en: '/home/projects.webp', es: '/home/proyects_esp.webp' }, anchor: [0.819, 0.695], wordAnchor: { en: [0.843, 0.683], es: [0.843, 0.68] }, hit: [0.238, 0.243], nudge: [0, 0], end: [0.2, 0.13], color: '#f8df6a' },
   { key: 'skills', label: '/home/skill.webp', word: { en: '/home/skills.webp', es: '/home/skill_esp.webp' }, anchor: [0.706, 0.302], wordAnchor: { en: [0.716, 0.329], es: [0.705, 0.329] }, hit: [0.251, 0.249], nudge: [0, 0], end: [0.2, 0.13], color: '#c94f4f' },
 ]
@@ -256,8 +257,8 @@ export function Menu3D({ progress, nav, onSelect, onHoverChange, aboutActive, la
   // Look textures up by path so we can pick the block + the current-language title.
   const texOf = (file) => textures[ALL_FILES.indexOf(file)]
 
-  const width = useThree((state) => state.size.width)
-  const isSmall = width < SMALL_BREAKPOINT
+  const { width, height } = useThree((state) => state.size)
+  const isSmall = width < SMALL_BREAKPOINT || width / height < PORTRAIT_ASPECT
   const n = ITEMS.length
 
   const [hoveredKey, setHoveredKey] = useState(null)

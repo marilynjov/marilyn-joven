@@ -894,24 +894,30 @@
   }
 }
 
-/* Phones: the letterboxed film frame is only a strip across the middle, so the
-   date stamp would spill off the photo onto the film. Pin it to the bottom of the
-   screen instead, full width, clear of the prev/next arrows. */
-@media (max-width: 720px) {
+/* Phones and tall tablets: the zoomed photo only fills a strip across the middle,
+   so the desktop-sized stamp would spill off it onto the film. Size the stamp to
+   the image box instead (container units), keeping it inside the photo. */
+@media (max-width: 720px), (max-aspect-ratio: 4/5) {
   .exp__imgbox {
-    width: 100vw;
-    height: 100%;
-    transform: translate(-50%, -50%);
+    container-type: size;
   }
   .exp__stamp {
-    left: 1.25rem;
-    right: 1.25rem;
-    bottom: max(2rem, 8vh);
+    left: 10cqw;
+    right: 10cqw;
+    bottom: 8cqh;
+    gap: 1.2cqh;
+  }
+  .exp__date {
+    font-size: 10cqh;
   }
   .exp__role {
-    letter-spacing: 0.14em;
+    font-size: min(3.6cqh, 1.1rem);
+    letter-spacing: 0.12em;
   }
   .exp__note {
     max-width: none;
+    margin-top: 0;
+    font-size: min(4cqh, 1rem);
+    line-height: 1.35;
   }
 }

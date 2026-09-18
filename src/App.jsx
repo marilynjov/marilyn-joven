@@ -547,7 +547,8 @@ function useMedia(query) {
 // stay hidden through the zoom and pop in together once it lands (is-ready). ────
 function SkillsFloat({ nav, lang }) {
   const ref = useRef()
-  const phone = useMedia('(max-width: 720px)')
+  // Phones, plus tall tablets (iPad portrait) — same 0.8 aspect cut-off as the menu.
+  const phone = useMedia('(max-width: 720px), (max-aspect-ratio: 4/5)')
   const phoneLayout = phone ? phoneSkillLayout() : null
   const skills = phoneLayout ? phoneLayout.skills : SKILLS
   useEffect(() => {
