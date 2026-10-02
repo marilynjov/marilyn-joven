@@ -488,31 +488,61 @@ function SkillIcon({ skill }) {
   )
 }
 
-// On phones the desktop scatter crowds the edges, so each row's icons are re-laid
-// out as a centred grid (up to 3 per line), and the row labels are re-stacked to
-// match. Rows come from SKILL_ROWS: an icon belongs to the last label above it.
-// All values are % of the viewport height, like the desktop x/y.
+// ── Skills layout ───────────────────────────────────────────────────────────
+// Icons are grouped into the SKILL_ROWS bands by their `y`, then spaced out
+// automatically along each row. So switching one off (`on: false` in
+// skillsConfig.js) just closes the gap — nothing else needs moving.
+const WIDE_LEFT = 11 // leftmost icon centre on a wide screen (% of the viewport)
+const WIDE_RIGHT = 89 // rightmost icon centre
+
+// The enabled icons of each row, in config order. An icon belongs to the last
+// SKILL_ROWS label above it.
+function skillRows() {
+  const rows = SKILL_ROWS.map(() => [])
+  for (const s of SKILLS) {
+    if (s.on === false) continue
+    let r = 0
+    SKILL_ROWS.forEach((row, i) => { if (row.y <= s.y) r = i })
+    rows[r].push(s)
+  }
+  return rows
+}
+
+// Wide screens: each row spreads evenly across the viewport, keeping the painted
+// stagger that each icon's own `y` gives it.
+function wideSkillLayout(rows) {
+  const skills = rows.flatMap((items) =>
+    items.map((s, i) => {
+      const t = items.length === 1 ? 0.5 : i / (items.length - 1)
+      return { ...s, x: WIDE_LEFT + (WIDE_RIGHT - WIDE_LEFT) * t + (s.nudgeX || 0), y: s.y }
+    }),
+  )
+  return { skills, labelY: SKILL_ROWS.map((r) => r.y) }
+}
+
+// Phones: the wide spread crowds the edges, so each row becomes a centred grid
+// (up to 3 per line) and the row labels re-stack to match. All values are % of
+// the viewport height.
 const SKILLS_PER_LINE = 3
 const PHONE_TOP = 12 // first row label
 const PHONE_BOTTOM = 94 // lowest the last line of icons may sit
 const PHONE_LABEL = 10 // label → centre of its first icon line
 const PHONE_LINE = 12 // icon line → next icon line
 const PHONE_ROW_GAP = 3 // extra space before the next row's label
-function phoneSkillLayout() {
-  const rows = SKILL_ROWS.map(() => [])
-  for (const s of SKILLS) {
-    let r = 0
-    SKILL_ROWS.forEach((row, i) => { if (row.y <= s.y) r = i })
-    rows[r].push(s)
-  }
-  const lineCounts = rows.map((items) => Math.ceil(items.length / SKILLS_PER_LINE))
-  const heights = lineCounts.map((n) => PHONE_LABEL + (n - 1) * PHONE_LINE + PHONE_ROW_GAP + 6)
+function phoneSkillLayout(rows) {
+  const heights = rows.map((items) => {
+    if (!items.length) return 0 // an all-off row takes no space (its label is hidden)
+    const lines = Math.ceil(items.length / SKILLS_PER_LINE)
+    return PHONE_LABEL + (lines - 1) * PHONE_LINE + PHONE_ROW_GAP + 6
+  })
   const total = heights.reduce((a, b) => a + b, 0)
   const k = Math.min(1, (PHONE_BOTTOM - PHONE_TOP) / total) // squeeze if it won't fit
 
   const labelY = []
   const skills = []
-  let y = PHONE_TOP
+  // Centre what's left vertically, so switching a row off doesn't leave the
+  // bottom of the screen empty.
+  let y = PHONE_TOP + Math.max(0, PHONE_BOTTOM - PHONE_TOP - total * k) / 2
   rows.forEach((items, r) => {
     labelY.push(y)
     items.forEach((s, i) => {
@@ -549,8 +579,8 @@ function SkillsFloat({ nav, lang }) {
   const ref = useRef()
   // Phones, plus tall tablets (iPad portrait) — same 0.8 aspect cut-off as the menu.
   const phone = useMedia('(max-width: 720px), (max-aspect-ratio: 4/5)')
-  const phoneLayout = phone ? phoneSkillLayout() : null
-  const skills = phoneLayout ? phoneLayout.skills : SKILLS
+  const rows = skillRows()
+  const { skills, labelY } = phone ? phoneSkillLayout(rows) : wideSkillLayout(rows)
   useEffect(() => {
     let raf
     const tick = () => {
@@ -568,8 +598,9 @@ function SkillsFloat({ nav, lang }) {
 
   return (
     <div className="skills" ref={ref}>
-      {SKILL_ROWS.map((r, i) => (
-        <p key={r.label.en} className="skills__rowlabel" style={{ top: `${phoneLayout ? phoneLayout.labelY[i] : r.y}%` }}>
+      {/* A row whose icons are all switched off drops its label too. */}
+      {SKILL_ROWS.map((r, i) => rows[i].length > 0 && (
+        <p key={r.label.en} className="skills__rowlabel" style={{ top: `${labelY[i]}%` }}>
           {pick(r.label, lang)}
         </p>
       ))}
